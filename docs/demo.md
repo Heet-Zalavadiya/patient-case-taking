@@ -1,4 +1,3 @@
-cat << 'EOF' > docs/demo.md
 # 3-Minute Demo Pitch & Backup Strategy
 
 ## Timeline (3 Minutes)
@@ -17,4 +16,3 @@ cat << 'EOF' > docs/demo.md
 - [ ] Backup 1: Screenshots of each step.
 - [ ] Backup 2: Screen recording of complete workflow.
 - [ ] Backup 3: Hardcoded JSON responses in frontend if backend or LLM API fails.
-EOF
