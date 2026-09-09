@@ -1,0 +1,16 @@
+{
+  "name": "patient-case-taking-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:patient": "npm --prefix frontend/patient run dev",
+    "build:patient": "npm --prefix frontend/patient run build",
+    "preview:patient": "npm --prefix frontend/patient run preview"
+  },
+  "keywords": [
+    "sih2026",
+    "medikiosk",
+    "ayush",
+    "opd-intake"
+  ]
+}
