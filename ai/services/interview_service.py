@@ -5,11 +5,14 @@ Output field names MUST exactly match the structured_history / red_flag_alerts t
 """
 
 import os
+
+import json
 from google import genai
 from google.genai import types
 from ai.prompts.clinical_interview_prompt import CLINICAL_INTERVIEW_PROMPT
 
-client = genai.Client(api_key=os.environ["AI_API_KEY"])
+client = genai.Client(api_key='AQ.Ab8RN6JUQtpd5INWeG0uZt0cyGneZIGR2iFruz5UgFjNhqvJ7A')
+                      #os.environ["AI_API_KEY"])
 MODEL = "gemini-3.5-flash-lite" 
 
 flag_emergency = types.FunctionDeclaration(
@@ -109,5 +112,16 @@ class InterviewService:
                 response_schema=STRUCTURED_HISTORY_SCHEMA
             )
         )
-        import json
+        
         return json.loads(result.text)
+
+# ADD THIS AT THE VERY BOTTOM OF interview_service.py:
+# if __name__ == "__main__":
+#     print("Initializing InterviewService...")
+#     service = InterviewService()
+#     print("Service initialized successfully!")
+    
+#     # Test sending a message
+#     question, flag = service.send_message("I have a severe chest pain and cannot breathe.")
+#     print("AI Response / Next Question:", question)
+#     print("Red Flag Triggered:", flag)
