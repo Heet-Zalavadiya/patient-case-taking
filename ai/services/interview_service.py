@@ -115,7 +115,6 @@ class InterviewService:
         
         return json.loads(result.text)
 
-# ADD THIS AT THE VERY BOTTOM OF interview_service.py:
 # if __name__ == "__main__":
 #     print("Initializing InterviewService...")
 #     service = InterviewService()
