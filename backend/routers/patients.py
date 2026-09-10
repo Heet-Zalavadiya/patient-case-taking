@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.connection import get_db
 from models.patient import Patient
+from models.clinical_session import ClinicalSession
+from models.structured_history import StructuredHistory
 from schemas.patient import PatientCreate, PatientResponse
+from schemas.clinical import SessionResponse, StructuredHistoryResponse
 import hashlib
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
@@ -43,3 +46,30 @@ def get_patient(patient_id: int, db: Session = Depends(get_db)):
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+
+@router.get("/{patient_id}/history", response_model=list[StructuredHistoryResponse])
+def get_patient_history(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return (
+        db.query(StructuredHistory)
+        .join(ClinicalSession, StructuredHistory.session_id == ClinicalSession.session_id)
+        .filter(ClinicalSession.patient_id == patient_id)
+        .order_by(StructuredHistory.generated_at.desc())
+        .all()
+    )
+
+
+@router.get("/{patient_id}/sessions", response_model=list[SessionResponse])
+def get_patient_sessions(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return (
+        db.query(ClinicalSession)
+        .filter(ClinicalSession.patient_id == patient_id)
+        .order_by(ClinicalSession.started_at.desc())
+        .all()
+    )
