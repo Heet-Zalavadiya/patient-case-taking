@@ -22,11 +22,14 @@ import {
 export const PatientLogin = () => {
   const { 
     patientData, 
+    theme,
     updatePatient, 
     nextStep, 
     setTokenNumber,
     setPatientField 
   } = usePatient();
+
+  const isLight = theme === 'light';
 
   const [loginId, setLoginId] = useState(patientData.login_id || '');
   const [password, setPassword] = useState(patientData.password || '');
@@ -96,7 +99,6 @@ export const PatientLogin = () => {
       }
     } catch (err) {
       console.warn('Login error, fallback to new patient record:', err.message);
-      // Even if unknown ID, auto-register as new patient
       updatePatient({
         login_id: loginId.trim(),
         password: password || '123',
@@ -149,17 +151,23 @@ export const PatientLogin = () => {
       
       {/* Page Title & Subtitle in English & Hindi */}
       <div className="mt-2 mb-4 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold mb-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+            isLight
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-emerald-500" />
           <span>Ayush Hospital OPD Kiosk Check-In / आयुष अस्पताल ओपीडी चेक-इन</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Patient Identification & Login
         </h2>
-        <p className="text-emerald-400 font-semibold text-base sm:text-lg mt-0.5">
+        <p className="text-emerald-500 font-semibold text-base sm:text-lg mt-0.5">
           मरीज़ पहचान एवं लॉगिन
         </p>
-        <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl mx-auto">
+        <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Enter your ABHA Number, Mobile, or Kiosk PIN / अपना आभा नंबर, मोबाइल या 4-अंकीय पिन दर्ज करें
         </p>
       </div>
@@ -171,13 +179,24 @@ export const PatientLogin = () => {
         <div className="lg:col-span-7 space-y-4">
           
           {/* Main Card */}
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-emerald-950/40">
-            
+          <div
+            className={`rounded-3xl p-6 sm:p-7 transition-colors duration-300 ${
+              isLight
+                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl shadow-slate-300/30 text-slate-900'
+                : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 shadow-2xl shadow-emerald-950/40 text-white'
+            }`}
+          >
             {/* Quick Demo Test Profiles Bar */}
-            <div className="mb-5 p-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl">
+            <div
+              className={`mb-5 p-3 rounded-2xl border transition-colors ${
+                isLight
+                  ? 'bg-slate-100/90 border-slate-200'
+                  : 'bg-slate-950/70 border-slate-800/80'
+              }`}
+            >
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
                   <span>Quick Demo Profiles (त्वरित टेस्ट प्रोफाइल):</span>
                 </span>
               </div>
@@ -185,21 +204,33 @@ export const PatientLogin = () => {
                 <button
                   type="button"
                   onClick={() => handleQuickDemo('AYUSH9901', 'password123')}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    isLight
+                      ? 'bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-800 border-slate-300 shadow-sm'
+                      : 'bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border-slate-700'
+                  }`}
                 >
                   👤 Rajesh Kumar (AYUSH9901)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDemo('9876543210', '123')}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    isLight
+                      ? 'bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-800 border-slate-300 shadow-sm'
+                      : 'bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border-slate-700'
+                  }`}
                 >
                   👩 Dr. Sunita (9876543210)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDemo('PATIENT01', '123')}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    isLight
+                      ? 'bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-800 border-slate-300 shadow-sm'
+                      : 'bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border-slate-700'
+                  }`}
                 >
                   👨 Amitabh (PATIENT01)
                 </button>
@@ -207,7 +238,7 @@ export const PatientLogin = () => {
             </div>
 
             {errorMsg && (
-              <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 flex items-center gap-3 text-sm animate-in fade-in">
+              <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-500 flex items-center gap-3 text-sm animate-in fade-in">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <span className="font-medium">{errorMsg}</span>
               </div>
@@ -218,14 +249,14 @@ export const PatientLogin = () => {
               {/* Field 1: ABHA ID / Mobile Number / Login ID */}
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
-                  <label className="block text-sm sm:text-base font-bold text-slate-200">
-                    ABHA ID / Mobile Number / Login ID <span className="text-emerald-400">*</span>
+                  <label className={`block text-sm sm:text-base font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                    ABHA ID / Mobile Number / Login ID <span className="text-emerald-500">*</span>
                   </label>
-                  <span className="text-xs font-medium text-emerald-400">आभा आईडी / मोबाइल नंबर</span>
+                  <span className="text-xs font-medium text-emerald-500">आभा आईडी / मोबाइल नंबर</span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-6 h-6 text-emerald-400" />
+                    <User className="w-6 h-6 text-emerald-500" />
                   </div>
                   <input
                     ref={loginInputRef}
@@ -237,10 +268,14 @@ export const PatientLogin = () => {
                       setErrorMsg('');
                     }}
                     placeholder="e.g. 9876543210 or 12-3456-7890"
-                    className={`w-full h-16 pl-14 pr-4 rounded-2xl bg-slate-950 border text-white text-xl font-medium placeholder-slate-500 focus:outline-none transition-all shadow-inner ${
-                      activeInput === 'loginId'
-                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950'
-                        : 'border-slate-700 hover:border-slate-600'
+                    className={`w-full h-16 pl-14 pr-4 rounded-2xl border text-xl font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
+                      isLight
+                        ? activeInput === 'loginId'
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-white text-slate-900'
+                          : 'border-slate-300 bg-slate-50 text-slate-900 hover:border-slate-400'
+                        : activeInput === 'loginId'
+                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950 text-white'
+                        : 'border-slate-700 bg-slate-950 text-white hover:border-slate-600'
                     }`}
                     autoComplete="off"
                   />
@@ -250,14 +285,14 @@ export const PatientLogin = () => {
               {/* Field 2: Password / 4-Digit PIN */}
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
-                  <label className="block text-sm sm:text-base font-bold text-slate-200">
-                    Security PIN / Password <span className="text-slate-400 text-xs font-normal">(Default: 123)</span>
+                  <label className={`block text-sm sm:text-base font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                    Security PIN / Password <span className={`text-xs font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>(Default: 123)</span>
                   </label>
-                  <span className="text-xs font-medium text-emerald-400">4-अंकीय पिन / पासवर्ड</span>
+                  <span className="text-xs font-medium text-emerald-500">4-अंकीय पिन / पासवर्ड</span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-slate-400">
-                    <KeyRound className="w-6 h-6 text-emerald-400" />
+                    <KeyRound className="w-6 h-6 text-emerald-500" />
                   </div>
                   <input
                     ref={passwordInputRef}
@@ -269,10 +304,14 @@ export const PatientLogin = () => {
                       setErrorMsg('');
                     }}
                     placeholder="Enter 4-digit PIN or Password (4-अंकीय पिन दर्ज करें)"
-                    className={`w-full h-16 pl-14 pr-4 rounded-2xl bg-slate-950 border text-white text-xl font-medium placeholder-slate-500 focus:outline-none transition-all shadow-inner ${
-                      activeInput === 'password'
-                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950'
-                        : 'border-slate-700 hover:border-slate-600'
+                    className={`w-full h-16 pl-14 pr-4 rounded-2xl border text-xl font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
+                      isLight
+                        ? activeInput === 'password'
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-white text-slate-900'
+                          : 'border-slate-300 bg-slate-50 text-slate-900 hover:border-slate-400'
+                        : activeInput === 'password'
+                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950 text-white'
+                        : 'border-slate-700 bg-slate-950 text-white hover:border-slate-600'
                     }`}
                   />
                 </div>
@@ -301,14 +340,20 @@ export const PatientLogin = () => {
           </div>
 
           {/* Quick ABHA QR Card / Scanner Button */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between">
+          <div
+            className={`rounded-2xl p-4 flex items-center justify-between transition-colors ${
+              isLight
+                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-md text-slate-900'
+                : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 text-white'
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-cyan-50 text-cyan-600' : 'bg-slate-800 text-cyan-400'}`}>
                 <QrCode className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">Scan ABHA Card (आभा कार्ड स्कैन करें)</div>
-                <div className="text-xs text-slate-400">Hold physical Ayushman QR card against scanner</div>
+                <div className="text-sm font-bold">Scan ABHA Card (आभा कार्ड स्कैन करें)</div>
+                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Hold physical Ayushman QR card against scanner</div>
               </div>
             </div>
             <button
@@ -316,7 +361,11 @@ export const PatientLogin = () => {
               onClick={() => {
                 handleQuickDemo('14-8899-2311-5544', '123');
               }}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-cyan-900/40 text-cyan-300 border border-slate-700 font-semibold text-xs transition"
+              className={`px-4 py-2 rounded-xl border font-semibold text-xs transition ${
+                isLight
+                  ? 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300'
+                  : 'bg-slate-800 hover:bg-cyan-900/40 text-cyan-300 border-slate-700'
+              }`}
             >
               Simulate Scan
             </button>
@@ -330,48 +379,75 @@ export const PatientLogin = () => {
           {/* Quick Emergency / Walk-in Bypass Card */}
           <div 
             onClick={!isGuestLoading ? handleInstantWalkIn : undefined}
-            className="group cursor-pointer rounded-3xl p-5 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-amber-950/30 border-2 border-rose-500/40 hover:border-rose-400 shadow-xl shadow-rose-950/20 transition-all duration-300 transform active:scale-98"
+            className={`group cursor-pointer rounded-3xl p-5 border-2 transition-all duration-300 transform active:scale-98 backdrop-blur-md ${
+              isLight
+                ? 'bg-gradient-to-br from-rose-50/90 via-white/95 to-amber-50/90 border-rose-300 hover:border-rose-400 shadow-xl shadow-rose-100/40 text-slate-900'
+                : 'bg-gradient-to-br from-rose-950/40 via-slate-900/85 to-amber-950/30 border-rose-500/40 hover:border-rose-400 shadow-xl shadow-rose-950/20 text-white'
+            }`}
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 group-hover:scale-110 transition-transform">
+              <div
+                className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${
+                  isLight
+                    ? 'bg-rose-100 border-rose-200 text-rose-600'
+                    : 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                }`}
+              >
                 {isGuestLoading ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-rose-500" />
                 ) : (
-                  <HeartPulse className="w-6 h-6 text-rose-400 animate-pulse" />
+                  <HeartPulse className="w-6 h-6 text-rose-500 animate-pulse" />
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wider">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      isLight
+                        ? 'bg-rose-100 text-rose-800'
+                        : 'bg-rose-500/20 text-rose-300'
+                    }`}
+                  >
                     Instant Bypass
                   </span>
-                  <span className="text-xs text-amber-300 font-semibold">बिना लॉगिन</span>
+                  <span className={`text-xs font-semibold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>बिना लॉगिन</span>
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-white mt-1 group-hover:text-rose-200 transition-colors">
+                <h3 className={`text-base sm:text-lg font-black mt-1 group-hover:text-rose-600 transition-colors ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   New Patient / Instant OPD Walk-in
                 </h3>
-                <p className="text-xs font-semibold text-rose-300">
+                <p className={`text-xs font-semibold ${isLight ? 'text-rose-700' : 'text-rose-300'}`}>
                   आपातकालीन / नया मरीज़ (सीधा टोकन)
                 </p>
-                <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                <p className={`text-xs mt-1.5 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                   No ABHA ID or first time visiting? Tap to auto-generate guest ID (<strong>GUEST-OPD</strong>) and proceed immediately.
                 </p>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-rose-500/20 flex items-center justify-between text-xs font-bold text-rose-300">
+            <div
+              className={`mt-3 pt-3 border-t flex items-center justify-between text-xs font-bold ${
+                isLight
+                  ? 'border-rose-200 text-rose-700'
+                  : 'border-rose-500/20 text-rose-300'
+              }`}
+            >
               <span>Skip Login & Generate Token →</span>
-              <span className="px-2 py-1 rounded-lg bg-rose-500 text-slate-950 font-black">1-TAP CHECK-IN</span>
+              <span className="px-2 py-1 rounded-lg bg-rose-500 text-white font-black shadow-sm">1-TAP CHECK-IN</span>
             </div>
           </div>
 
           {/* Onscreen Touch Numeric Keypad */}
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl shadow-emerald-950/30">
-            
+          <div
+            className={`rounded-3xl p-4 sm:p-5 shadow-xl transition-colors duration-300 ${
+              isLight
+                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-slate-300/30 text-slate-900'
+                : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 shadow-emerald-950/30 text-white'
+            }`}
+          >
             {/* Keypad Header */}
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
-                <Keyboard className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                <Keyboard className="w-4 h-4 text-emerald-500" />
+                <span className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                   Touch Keypad ({activeInput === 'loginId' ? 'ID / Mobile' : 'PIN / Password'})
                 </span>
               </div>
@@ -379,7 +455,11 @@ export const PatientLogin = () => {
                 <button
                   type="button"
                   onClick={() => setActiveInput(activeInput === 'loginId' ? 'password' : 'loginId')}
-                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 transition"
+                  className={`text-[11px] font-semibold px-2 py-1 rounded-lg border transition ${
+                    isLight
+                      ? 'text-cyan-700 bg-slate-100 hover:bg-slate-200 border-slate-300'
+                      : 'text-cyan-400 hover:text-cyan-300 bg-slate-800 border-slate-700'
+                  }`}
                 >
                   Switch Field ⇄
                 </button>
@@ -413,8 +493,14 @@ export const PatientLogin = () => {
                     className={`h-14 sm:h-16 rounded-2xl font-bold transition-all active:scale-95 flex flex-col items-center justify-center cursor-pointer select-none shadow-md ${
                       isSpecial
                         ? keyItem.action === 'BACKSPACE'
-                          ? 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/40'
+                          ? isLight
+                            ? 'bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300'
+                            : 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/40'
+                          : isLight
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-sm'
                           : 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 border border-amber-800/40 text-sm'
+                        : isLight
+                        ? 'bg-slate-100/90 hover:bg-slate-200 text-slate-900 border border-slate-200 text-xl hover:border-emerald-500/50 hover:text-emerald-700 shadow-sm'
                         : 'bg-slate-800/90 hover:bg-slate-750 text-white border border-slate-700/80 text-xl hover:border-emerald-500/50 hover:text-emerald-300'
                     }`}
                   >
@@ -424,7 +510,7 @@ export const PatientLogin = () => {
                       <>
                         <span className="leading-tight">{keyItem.text || keyItem.label}</span>
                         {keyItem.sub && (
-                          <span className="text-[9px] font-normal text-slate-400 tracking-wider">
+                          <span className={`text-[9px] font-normal tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                             {keyItem.sub}
                           </span>
                         )}
@@ -436,13 +522,17 @@ export const PatientLogin = () => {
             </div>
 
             {/* Common Prefixes Bar */}
-            <div className="mt-3 pt-3 border-t border-slate-800 grid grid-cols-4 gap-1.5">
+            <div className={`mt-3 pt-3 border-t grid grid-cols-4 gap-1.5 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
               {['98', '99', '91', '01'].map((prefix) => (
                 <button
                   key={prefix}
                   type="button"
                   onClick={() => handleKeypadPress(prefix)}
-                  className="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition"
+                  className={`py-1.5 rounded-xl border text-xs font-semibold transition ${
+                    isLight
+                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800'
+                      : 'bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-300'
+                  }`}
                 >
                   +{prefix}
                 </button>

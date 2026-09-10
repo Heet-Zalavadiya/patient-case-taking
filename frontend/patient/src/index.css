@@ -16,13 +16,17 @@
     -webkit-user-select: text;
   }
 
-  html, body {
-    height: 100%;
-    width: 100%;
+  html, body, #root {
     margin: 0;
     padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    background-color: transparent !important;
+  }
+
+  html, body {
+    height: 100%;
     overflow: hidden;
-    background-color: #0b1329;
     color: #f8fafc;
     font-family: var(--font-sans);
     touch-action: manipulation;
@@ -30,7 +34,6 @@
 
   #root {
     height: 100%;
-    width: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;

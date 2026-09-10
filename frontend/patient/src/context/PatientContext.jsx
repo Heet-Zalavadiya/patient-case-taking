@@ -8,8 +8,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
  * - preferred_language: 'Hindi' | 'English' | 'Gujarati' (default: 'Hindi')
  * - accessibility_mode: 'standard' | 'audio-guided' | 'large-text-high-contrast' (default: 'standard')
  * - consents: array of { consent_type: 'data_capture' | 'abdm_sharing', is_granted: boolean, granted_via: 'touch' | 'audio' }
- * - current_step: number (1 to 4)
+ * - current_step: number (1 to 6)
  * - token_number: string (e.g., 'A-102')
+ * - session_id: number | null
+ * - history_mode: 'allopathic' | 'ayush' (default: 'allopathic')
+ * - interview_turns: array of { turn_number, input_mode, ai_question, patient_response_text, response_language }
+ * - red_flag_alert: object | null
+ * - uploaded_documents: array of { document_id, document_type, ocr_status, file_name, ... }
  */
 
 const initialPatientState = {
@@ -22,13 +27,28 @@ const initialPatientState = {
     { consent_type: 'data_capture', is_granted: false, granted_via: 'touch' },
     { consent_type: 'abdm_sharing', is_granted: false, granted_via: 'touch' }
   ],
-  current_step: 1, // 1 to 4
-  token_number: '' // e.g. 'A-102'
+  current_step: 1, // 1 to 6
+  token_number: '', // e.g. 'A-102'
+  session_id: null,
+  history_mode: 'allopathic', // 'allopathic' | 'ayush'
+  interview_turns: [],
+  red_flag_alert: null,
+  uploaded_documents: []
 };
 
 const PatientContext = createContext(undefined);
 
 export const PatientProvider = ({ children }) => {
+  const [theme, setThemeState] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('medikiosk_theme') || sessionStorage.getItem('medikiosk_theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    } catch (e) {
+      console.warn('Could not restore theme:', e);
+    }
+    return 'dark'; // Default MEDI-OS dark kiosk theme
+  });
+
   const [patientData, setPatientData] = useState(() => {
     try {
       const saved = sessionStorage.getItem('medikiosk_patient_session');
@@ -43,6 +63,21 @@ export const PatientProvider = ({ children }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Sync theme to storage
+  const setTheme = (newTheme) => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('medikiosk_theme', newTheme);
+      sessionStorage.setItem('medikiosk_theme', newTheme);
+    } catch (e) {
+      console.warn('Could not persist theme:', e);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   // Sync to session storage for kiosk recovery in case of accidental refresh
   useEffect(() => {
@@ -131,11 +166,72 @@ export const PatientProvider = ({ children }) => {
     });
   };
 
-  // Step navigation (bounded 1 to 4)
+  // Day 2 Clinical Session & Intake Helpers
+  const setSessionId = (session_id) => {
+    setPatientData((prev) => ({
+      ...prev,
+      session_id
+    }));
+  };
+
+  const setHistoryMode = (history_mode) => {
+    setPatientData((prev) => ({
+      ...prev,
+      history_mode
+    }));
+  };
+
+  const addInterviewTurn = (turn) => {
+    setPatientData((prev) => ({
+      ...prev,
+      interview_turns: [...(prev.interview_turns || []), turn]
+    }));
+  };
+
+  const setRedFlagAlert = (red_flag_alert) => {
+    setPatientData((prev) => ({
+      ...prev,
+      red_flag_alert
+    }));
+  };
+
+  const clearRedFlagAlert = () => {
+    setPatientData((prev) => ({
+      ...prev,
+      red_flag_alert: null
+    }));
+  };
+
+  const addUploadedDocument = (doc) => {
+    setPatientData((prev) => ({
+      ...prev,
+      uploaded_documents: [...(prev.uploaded_documents || []), doc]
+    }));
+  };
+
+  const updateUploadedDocument = (docId, updates) => {
+    setPatientData((prev) => ({
+      ...prev,
+      uploaded_documents: (prev.uploaded_documents || []).map((d) =>
+        (d.id === docId || d.document_id === docId) ? { ...d, ...updates } : d
+      )
+    }));
+  };
+
+  const removeUploadedDocument = (docId) => {
+    setPatientData((prev) => ({
+      ...prev,
+      uploaded_documents: (prev.uploaded_documents || []).filter(
+        (d) => d.id !== docId && d.document_id !== docId
+      )
+    }));
+  };
+
+  // Step navigation (bounded 1 to 6)
   const nextStep = () => {
     setPatientData((prev) => ({
       ...prev,
-      current_step: Math.min(prev.current_step + 1, 4)
+      current_step: Math.min(prev.current_step + 1, 6)
     }));
   };
 
@@ -147,7 +243,7 @@ export const PatientProvider = ({ children }) => {
   };
 
   const goToStep = (stepNumber) => {
-    if (stepNumber >= 1 && stepNumber <= 4) {
+    if (stepNumber >= 1 && stepNumber <= 6) {
       setPatientData((prev) => ({
         ...prev,
         current_step: stepNumber
@@ -166,8 +262,7 @@ export const PatientProvider = ({ children }) => {
   const resetSession = () => {
     sessionStorage.removeItem('medikiosk_patient_session');
     setPatientData({
-      ...initialPatientState,
-      token_number: ''
+      ...initialPatientState
     });
     setError(null);
     setIsLoading(false);
@@ -175,6 +270,9 @@ export const PatientProvider = ({ children }) => {
 
   const value = {
     patientData,
+    theme,
+    setTheme,
+    toggleTheme,
     isLoading,
     error,
     setIsLoading,
@@ -185,6 +283,14 @@ export const PatientProvider = ({ children }) => {
     setAccessibilityMode,
     setConsent,
     toggleConsent,
+    setSessionId,
+    setHistoryMode,
+    addInterviewTurn,
+    setRedFlagAlert,
+    clearRedFlagAlert,
+    addUploadedDocument,
+    updateUploadedDocument,
+    removeUploadedDocument,
     nextStep,
     prevStep,
     goToStep,

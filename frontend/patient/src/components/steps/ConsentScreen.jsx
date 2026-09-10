@@ -24,6 +24,7 @@ import {
 export const ConsentScreen = () => {
   const { 
     patientData, 
+    theme,
     setConsent, 
     toggleConsent, 
     nextStep, 
@@ -31,6 +32,8 @@ export const ConsentScreen = () => {
     setTokenNumber, 
     updatePatient 
   } = usePatient();
+
+  const isLight = theme === 'light';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -136,7 +139,6 @@ export const ConsentScreen = () => {
         };
 
         recognition.onerror = () => {
-          // Fallback simulation
           fallbackAudioGrant(type);
         };
 
@@ -204,23 +206,29 @@ export const ConsentScreen = () => {
       
       {/* 1. SCREEN HEADER */}
       <div className="mt-2 mb-4 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs sm:text-sm font-semibold mb-2">
-          <Lock className="w-4 h-4 text-teal-400" />
+        <div
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+            isLight
+              ? 'bg-teal-50 border-teal-300 text-teal-800'
+              : 'bg-teal-500/10 border-teal-500/30 text-teal-300'
+          }`}
+        >
+          <Lock className="w-4 h-4 text-teal-500" />
           <span>DPDP Act 2023 & Ayushman Bharat (ABDM) Compliance</span>
         </div>
-        <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Patient Consent & Data Privacy
         </h2>
-        <p className="text-xl sm:text-2xl font-bold text-teal-400 mt-0.5">
+        <p className="text-xl sm:text-2xl font-bold text-teal-500 mt-0.5">
           मरीज़ सहमति एवं डेटा गोपनीयता
         </p>
-        <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl mx-auto">
+        <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Please confirm your digital health data permissions. You can grant consent via <strong>Touch</strong> or by <strong>Voice</strong>.
         </p>
       </div>
 
       {validationError && (
-        <div className="w-full mb-5 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 flex items-center gap-3 text-sm animate-in fade-in">
+        <div className="w-full mb-5 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-500 flex items-center gap-3 text-sm animate-in fade-in">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <span className="font-semibold">{validationError}</span>
         </div>
@@ -233,42 +241,64 @@ export const ConsentScreen = () => {
         <div 
           className={`rounded-3xl p-5 sm:p-6 transition-all duration-200 border ${
             dataCaptureConsent.is_granted
-              ? 'bg-slate-900/95 border-2 border-teal-400 shadow-xl shadow-teal-500/10 ring-2 ring-teal-500/20'
-              : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+              ? isLight
+                ? 'bg-teal-50/90 border-2 border-teal-500 shadow-xl shadow-teal-100/50 ring-2 ring-teal-500/20 text-slate-900'
+                : 'bg-slate-900/95 border-2 border-teal-400 shadow-xl shadow-teal-500/10 ring-2 ring-teal-500/20 text-white'
+              : isLight
+              ? 'bg-white/90 border-slate-200 shadow-md text-slate-900 hover:border-slate-300'
+              : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 text-white'
           }`}
         >
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             
             {/* Left: Info */}
             <div className="flex items-start gap-3.5 flex-1">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                dataCaptureConsent.is_granted ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40' : 'bg-slate-800 text-slate-400'
-              }`}>
+              <div
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  dataCaptureConsent.is_granted
+                    ? isLight
+                      ? 'bg-teal-100 text-teal-800 border-teal-300'
+                      : 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                    : isLight
+                    ? 'bg-slate-100 text-slate-500 border-slate-200'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
+              >
                 <FileText className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-black text-white">
+                  <h3 className={`text-base sm:text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {texts.data_capture.title}
                   </h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold uppercase tracking-wider">
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      isLight ? 'bg-cyan-100 text-cyan-800' : 'bg-cyan-500/20 text-cyan-300'
+                    }`}
+                  >
                     Mandatory / अनिवार्य
                   </span>
                 </div>
-                <p className="text-sm text-slate-300 mt-1 font-medium">
+                <p className={`text-sm mt-1 font-medium ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                   {texts.data_capture.desc}
                 </p>
-                <div className="text-xs text-slate-400 mt-2 flex flex-wrap items-center gap-2">
-                  <span>Method: <strong className="text-teal-300 capitalize">{dataCaptureConsent.granted_via}</strong></span>
+                <div className={`text-xs mt-2 flex flex-wrap items-center gap-2 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <span>Method: <strong className={isLight ? 'text-teal-700 capitalize' : 'text-teal-300 capitalize'}>{dataCaptureConsent.granted_via}</strong></span>
                   <span>•</span>
-                  <span>DPDP Ref: <strong className="text-slate-300">AYUSH-DPDP-SEC6</strong></span>
+                  <span>DPDP Ref: <strong className={isLight ? 'text-slate-700' : 'text-slate-300'}>AYUSH-DPDP-SEC6</strong></span>
                   <span>•</span>
-                  <span>Status: <strong className={dataCaptureConsent.is_granted ? 'text-emerald-400' : 'text-slate-400'}>
+                  <span>Status: <strong className={dataCaptureConsent.is_granted ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-slate-500')}>
                     {dataCaptureConsent.is_granted ? 'Granted (स्वीकृत)' : 'Pending'}
                   </strong></span>
                 </div>
                 {audioFeedback.data_capture && (
-                  <div className="mt-2 text-xs font-semibold text-purple-300 bg-purple-950/40 px-2.5 py-1 rounded-lg border border-purple-800/40 inline-block">
+                  <div
+                    className={`mt-2 text-xs font-semibold px-2.5 py-1 rounded-lg border inline-block ${
+                      isLight
+                        ? 'bg-purple-50 text-purple-900 border-purple-200'
+                        : 'bg-purple-950/40 text-purple-300 border-purple-800/40'
+                    }`}
+                  >
                     🎙️ {audioFeedback.data_capture}
                   </div>
                 )}
@@ -284,12 +314,14 @@ export const ConsentScreen = () => {
                 onClick={() => handleListenConsent('data_capture')}
                 className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition ${
                   speakingConsent === 'data_capture'
-                    ? 'bg-teal-500 text-slate-950 border-teal-400 animate-pulse'
+                    ? 'bg-teal-500 text-white border-teal-400 animate-pulse'
+                    : isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-750 border-slate-700'
                 }`}
                 title="Listen to consent terms"
               >
-                <Volume2 className="w-4 h-4 text-cyan-400" />
+                <Volume2 className="w-4 h-4 text-cyan-500" />
                 <span className="hidden sm:inline">Listen (सुनें)</span>
               </button>
 
@@ -301,12 +333,16 @@ export const ConsentScreen = () => {
                   listeningFor === 'data_capture'
                     ? 'bg-rose-500 text-white border-rose-400 animate-pulse shadow-lg shadow-rose-500/30'
                     : dataCaptureConsent.granted_via === 'audio' && dataCaptureConsent.is_granted
-                    ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                    ? isLight
+                      ? 'bg-purple-100 border-purple-300 text-purple-900'
+                      : 'bg-purple-500/20 border-purple-500 text-purple-300'
+                    : isLight
+                    ? 'bg-slate-100 hover:bg-purple-50 hover:text-purple-800 text-slate-800 border-slate-300 shadow-sm'
                     : 'bg-slate-800 text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 border-slate-700'
                 }`}
                 title="Speak I Agree"
               >
-                <Mic className="w-4 h-4 text-purple-400" />
+                <Mic className="w-4 h-4 text-purple-500" />
                 <span className="hidden sm:inline">
                   {listeningFor === 'data_capture' ? 'Listening...' : "Speak 'I Agree'"}
                 </span>
@@ -317,12 +353,12 @@ export const ConsentScreen = () => {
                 type="button"
                 onClick={() => toggleConsent('data_capture', 'touch')}
                 className={`w-16 h-10 rounded-full p-1 transition-colors duration-200 ease-in-out relative flex items-center cursor-pointer shadow-inner ${
-                  dataCaptureConsent.is_granted ? 'bg-teal-500' : 'bg-slate-700'
+                  dataCaptureConsent.is_granted ? 'bg-teal-500' : isLight ? 'bg-slate-300' : 'bg-slate-700'
                 }`}
               >
                 <div
                   className={`w-8 h-8 rounded-full bg-slate-950 shadow-md transform transition-transform duration-200 flex items-center justify-center text-white ${
-                    dataCaptureConsent.is_granted ? 'translate-x-6 text-teal-400' : 'translate-x-0 text-slate-500'
+                    dataCaptureConsent.is_granted ? 'translate-x-6 text-teal-400' : 'translate-x-0 text-slate-400'
                   }`}
                 >
                   {dataCaptureConsent.is_granted ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4 stroke-[3]" />}
@@ -338,42 +374,64 @@ export const ConsentScreen = () => {
         <div 
           className={`rounded-3xl p-5 sm:p-6 transition-all duration-200 border ${
             abdmConsent.is_granted
-              ? 'bg-slate-900/95 border-2 border-cyan-400 shadow-xl shadow-cyan-500/10 ring-2 ring-cyan-500/20'
-              : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+              ? isLight
+                ? 'bg-cyan-50/90 border-2 border-cyan-500 shadow-xl shadow-cyan-100/50 ring-2 ring-cyan-500/20 text-slate-900'
+                : 'bg-slate-900/95 border-2 border-cyan-400 shadow-xl shadow-cyan-500/10 ring-2 ring-cyan-500/20 text-white'
+              : isLight
+              ? 'bg-white/90 border-slate-200 shadow-md text-slate-900 hover:border-slate-300'
+              : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 text-white'
           }`}
         >
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             
             {/* Left: Info */}
             <div className="flex items-start gap-3.5 flex-1">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                abdmConsent.is_granted ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-800 text-slate-400'
-              }`}>
+              <div
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  abdmConsent.is_granted
+                    ? isLight
+                      ? 'bg-cyan-100 text-cyan-800 border-cyan-300'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : isLight
+                    ? 'bg-slate-100 text-slate-500 border-slate-200'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
+              >
                 <Share2 className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-black text-white">
+                  <h3 className={`text-base sm:text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {texts.abdm_sharing.title}
                   </h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold uppercase tracking-wider">
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      isLight ? 'bg-emerald-100 text-emerald-800' : 'bg-emerald-500/20 text-emerald-300'
+                    }`}
+                  >
                     Recommended / अनुशंसित
                   </span>
                 </div>
-                <p className="text-sm text-slate-300 mt-1 font-medium">
+                <p className={`text-sm mt-1 font-medium ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                   {texts.abdm_sharing.desc}
                 </p>
-                <div className="text-xs text-slate-400 mt-2 flex flex-wrap items-center gap-2">
-                  <span>Method: <strong className="text-cyan-300 capitalize">{abdmConsent.granted_via}</strong></span>
+                <div className={`text-xs mt-2 flex flex-wrap items-center gap-2 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <span>Method: <strong className={isLight ? 'text-cyan-700 capitalize' : 'text-cyan-300 capitalize'}>{abdmConsent.granted_via}</strong></span>
                   <span>•</span>
-                  <span>ABDM Ref: <strong className="text-slate-300">NHA-M2-CONSENT</strong></span>
+                  <span>ABDM Ref: <strong className={isLight ? 'text-slate-700' : 'text-slate-300'}>NHA-M2-CONSENT</strong></span>
                   <span>•</span>
-                  <span>Status: <strong className={abdmConsent.is_granted ? 'text-emerald-400' : 'text-slate-400'}>
+                  <span>Status: <strong className={abdmConsent.is_granted ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-slate-500')}>
                     {abdmConsent.is_granted ? 'Granted (स्वीकृत)' : 'Pending'}
                   </strong></span>
                 </div>
                 {audioFeedback.abdm_sharing && (
-                  <div className="mt-2 text-xs font-semibold text-purple-300 bg-purple-950/40 px-2.5 py-1 rounded-lg border border-purple-800/40 inline-block">
+                  <div
+                    className={`mt-2 text-xs font-semibold px-2.5 py-1 rounded-lg border inline-block ${
+                      isLight
+                        ? 'bg-purple-50 text-purple-900 border-purple-200'
+                        : 'bg-purple-950/40 text-purple-300 border-purple-800/40'
+                    }`}
+                  >
                     🎙️ {audioFeedback.abdm_sharing}
                   </div>
                 )}
@@ -389,12 +447,14 @@ export const ConsentScreen = () => {
                 onClick={() => handleListenConsent('abdm_sharing')}
                 className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition ${
                   speakingConsent === 'abdm_sharing'
-                    ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse'
+                    ? 'bg-cyan-500 text-white border-cyan-400 animate-pulse'
+                    : isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-750 border-slate-700'
                 }`}
                 title="Listen to consent terms"
               >
-                <Volume2 className="w-4 h-4 text-cyan-400" />
+                <Volume2 className="w-4 h-4 text-cyan-500" />
                 <span className="hidden sm:inline">Listen (सुनें)</span>
               </button>
 
@@ -406,12 +466,16 @@ export const ConsentScreen = () => {
                   listeningFor === 'abdm_sharing'
                     ? 'bg-rose-500 text-white border-rose-400 animate-pulse shadow-lg shadow-rose-500/30'
                     : abdmConsent.granted_via === 'audio' && abdmConsent.is_granted
-                    ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                    ? isLight
+                      ? 'bg-purple-100 border-purple-300 text-purple-900'
+                      : 'bg-purple-500/20 border-purple-500 text-purple-300'
+                    : isLight
+                    ? 'bg-slate-100 hover:bg-purple-50 hover:text-purple-800 text-slate-800 border-slate-300 shadow-sm'
                     : 'bg-slate-800 text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 border-slate-700'
                 }`}
                 title="Speak I Agree"
               >
-                <Mic className="w-4 h-4 text-purple-400" />
+                <Mic className="w-4 h-4 text-purple-500" />
                 <span className="hidden sm:inline">
                   {listeningFor === 'abdm_sharing' ? 'Listening...' : "Speak 'I Agree'"}
                 </span>
@@ -422,12 +486,12 @@ export const ConsentScreen = () => {
                 type="button"
                 onClick={() => toggleConsent('abdm_sharing', 'touch')}
                 className={`w-16 h-10 rounded-full p-1 transition-colors duration-200 ease-in-out relative flex items-center cursor-pointer shadow-inner ${
-                  abdmConsent.is_granted ? 'bg-cyan-500' : 'bg-slate-700'
+                  abdmConsent.is_granted ? 'bg-cyan-500' : isLight ? 'bg-slate-300' : 'bg-slate-700'
                 }`}
               >
                 <div
                   className={`w-8 h-8 rounded-full bg-slate-950 shadow-md transform transition-transform duration-200 flex items-center justify-center text-white ${
-                    abdmConsent.is_granted ? 'translate-x-6 text-cyan-400' : 'translate-x-0 text-slate-500'
+                    abdmConsent.is_granted ? 'translate-x-6 text-cyan-400' : 'translate-x-0 text-slate-400'
                   }`}
                 >
                   {abdmConsent.is_granted ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4 stroke-[3]" />}
@@ -446,9 +510,13 @@ export const ConsentScreen = () => {
         <button
           type="button"
           onClick={handleGrantAll}
-          className="text-xs font-bold text-teal-300 hover:text-teal-200 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-950/50 border border-teal-800/60 shadow transition cursor-pointer"
+          className={`text-xs font-bold flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow transition cursor-pointer ${
+            isLight
+              ? 'bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-900 shadow-sm'
+              : 'bg-teal-950/50 hover:bg-teal-900/50 border-teal-800/60 text-teal-300'
+          }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-teal-400" />
+          <CheckCircle2 className="w-4 h-4 text-teal-500" />
           <span>Grant All Consents via Touch (सभी अनुमतियाँ दें)</span>
         </button>
       </div>
@@ -461,7 +529,11 @@ export const ConsentScreen = () => {
           type="button"
           onClick={prevStep}
           disabled={isSubmitting}
-          className="h-16 px-6 sm:px-8 rounded-2xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold text-base flex items-center gap-2.5 transition active:scale-98 cursor-pointer disabled:opacity-50"
+          className={`h-16 px-6 sm:px-8 rounded-2xl border font-bold text-base flex items-center gap-2.5 transition active:scale-98 cursor-pointer disabled:opacity-50 shadow-md ${
+            isLight
+              ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-slate-200/50'
+              : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
+          }`}
         >
           <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
           <span>Back / पीछे जाएँ</span>
