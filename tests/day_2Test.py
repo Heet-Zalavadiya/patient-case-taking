@@ -146,3 +146,34 @@ if __name__ == "__main__":
         print("===========================================")
     except AssertionError as e:
         print(f"\n[INTEGRATION BUG IDENTIFIED]: {e}")
+        
+#         Ai testing
+#         # ----------------------------------------------------
+# # 3. Direct Execution Test Block
+# # ----------------------------------------------------
+# if __name__ == "__main__":
+#     import asyncio
+
+#     async def test_session():
+#         print("Initializing InterviewService...")
+#         service = InterviewService(history_mode="standard")
+#         print("Service online.\n")
+
+#         # Turn 1: Presenting complaint
+#         print("--- Turn 1 ---")
+#         q1, flag1 = await service.send_message("I have a severe chest pain and difficulty breathing.")
+#         print("AI:", q1)
+#         print("Flag:", flag1)
+
+#         # Turn 2: Follow-up answer
+#         print("\n--- Turn 2 ---")
+#         q2, flag2 = await service.send_message("It started 20 minutes ago while sitting, and feels heavy.")
+#         print("AI:", q2)
+#         print("Flag:", flag2)
+
+#         # Final extraction
+#         print("\n--- Generating Structured SOCRATES History ---")
+#         extracted_data = await service.generate_structured_history()
+#         print(json.dumps(extracted_data, indent=2))
+
+#     asyncio.run(test_session())
