@@ -1,0 +1,462 @@
+import React, { useState, useRef } from 'react';
+import { usePatient } from '../../context/PatientContext';
+import { loginPatient } from '../../services/mockApi';
+import { 
+  User, 
+  KeyRound, 
+  ArrowRight, 
+  Sparkles, 
+  ShieldCheck, 
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  Zap,
+  Delete,
+  CornerDownLeft,
+  Keyboard,
+  UserPlus,
+  QrCode,
+  HeartPulse
+} from 'lucide-react';
+
+export const PatientLogin = () => {
+  const { 
+    patientData, 
+    updatePatient, 
+    nextStep, 
+    setTokenNumber,
+    setPatientField 
+  } = usePatient();
+
+  const [loginId, setLoginId] = useState(patientData.login_id || '');
+  const [password, setPassword] = useState(patientData.password || '');
+  const [activeInput, setActiveInput] = useState('loginId'); // 'loginId' | 'password'
+  const [showKeypad, setShowKeypad] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const loginInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+
+  // Keypad Click Handler
+  const handleKeypadPress = (val) => {
+    setErrorMsg('');
+    if (activeInput === 'loginId') {
+      if (val === 'BACKSPACE') {
+        setLoginId((prev) => prev.slice(0, -1));
+      } else if (val === 'CLEAR') {
+        setLoginId('');
+      } else {
+        setLoginId((prev) => prev + val);
+      }
+    } else {
+      if (val === 'BACKSPACE') {
+        setPassword((prev) => prev.slice(0, -1));
+      } else if (val === 'CLEAR') {
+        setPassword('');
+      } else {
+        setPassword((prev) => prev + val);
+      }
+    }
+  };
+
+  // Quick fill sample patients for fast kiosk testing
+  const handleQuickDemo = (id, pass) => {
+    setLoginId(id);
+    setPassword(pass);
+    setErrorMsg('');
+  };
+
+  // Primary Login Submission
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!loginId.trim()) {
+      setErrorMsg('कृपया अपना आभा आईडी, मोबाइल नंबर या लॉगिन आईडी दर्ज करें (Please enter ABHA, Mobile, or Login ID).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      const response = await loginPatient(loginId.trim(), password || '123');
+      if (response.success && response.patient) {
+        updatePatient({
+          login_id: response.patient.login_id,
+          password: password || '123',
+          full_name: response.patient.full_name || `Patient (${loginId.slice(-4)})`,
+          preferred_language: response.patient.preferred_language || patientData.preferred_language || 'Hindi',
+          accessibility_mode: response.patient.accessibility_mode || patientData.accessibility_mode || 'standard',
+          consents: response.patient.consents || patientData.consents,
+          token_number: response.token_number
+        });
+        setTokenNumber(response.token_number);
+        nextStep();
+      }
+    } catch (err) {
+      console.warn('Login error, fallback to new patient record:', err.message);
+      // Even if unknown ID, auto-register as new patient
+      updatePatient({
+        login_id: loginId.trim(),
+        password: password || '123',
+        full_name: `Patient (${loginId.slice(-4) || 'Walk-in'})`
+      });
+      nextStep();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Instant Walk-in / Emergency Bypass Handler
+  const handleInstantWalkIn = async () => {
+    setIsGuestLoading(true);
+    setErrorMsg('');
+
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const guestId = `GUEST-OPD-${randomSuffix}`;
+
+    try {
+      const response = await loginPatient(guestId, 'guest123');
+      updatePatient({
+        login_id: 'GUEST-OPD',
+        password: 'guest123',
+        full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`,
+        preferred_language: patientData.preferred_language || 'Hindi',
+        accessibility_mode: patientData.accessibility_mode || 'standard',
+        consents: [
+          { consent_type: 'data_capture', is_granted: true, granted_via: 'touch' },
+          { consent_type: 'abdm_sharing', is_granted: false, granted_via: 'touch' }
+        ],
+        token_number: response.token_number
+      });
+      setTokenNumber(response.token_number);
+      nextStep();
+    } catch (err) {
+      updatePatient({
+        login_id: 'GUEST-OPD',
+        password: 'guest123',
+        full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`
+      });
+      nextStep();
+    } finally {
+      setIsGuestLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto flex flex-col">
+      
+      {/* Page Title & Subtitle in English & Hindi */}
+      <div className="mt-2 mb-4 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold mb-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>Ayush Hospital OPD Kiosk Check-In / आयुष अस्पताल ओपीडी चेक-इन</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          Patient Identification & Login
+        </h2>
+        <p className="text-emerald-400 font-semibold text-base sm:text-lg mt-0.5">
+          मरीज़ पहचान एवं लॉगिन
+        </p>
+        <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl mx-auto">
+          Enter your ABHA Number, Mobile, or Kiosk PIN / अपना आभा नंबर, मोबाइल या 4-अंकीय पिन दर्ज करें
+        </p>
+      </div>
+
+      {/* Main Grid: Form on Left, Keypad & Emergency on Right */}
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT COLUMN: Input Form (lg:col-span-7) */}
+        <div className="lg:col-span-7 space-y-4">
+          
+          {/* Main Card */}
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl shadow-emerald-950/40">
+            
+            {/* Quick Demo Test Profiles Bar */}
+            <div className="mb-5 p-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Quick Demo Profiles (त्वरित टेस्ट प्रोफाइल):</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo('AYUSH9901', 'password123')}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                >
+                  👤 Rajesh Kumar (AYUSH9901)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo('9876543210', '123')}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                >
+                  👩 Dr. Sunita (9876543210)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo('PATIENT01', '123')}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-emerald-900/50 hover:text-emerald-300 text-slate-300 border border-slate-700 transition"
+                >
+                  👨 Amitabh (PATIENT01)
+                </button>
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 flex items-center gap-3 text-sm animate-in fade-in">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span className="font-medium">{errorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              
+              {/* Field 1: ABHA ID / Mobile Number / Login ID */}
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between">
+                  <label className="block text-sm sm:text-base font-bold text-slate-200">
+                    ABHA ID / Mobile Number / Login ID <span className="text-emerald-400">*</span>
+                  </label>
+                  <span className="text-xs font-medium text-emerald-400">आभा आईडी / मोबाइल नंबर</span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <input
+                    ref={loginInputRef}
+                    type="text"
+                    value={loginId}
+                    onFocus={() => setActiveInput('loginId')}
+                    onChange={(e) => {
+                      setLoginId(e.target.value);
+                      setErrorMsg('');
+                    }}
+                    placeholder="e.g. 9876543210 or 12-3456-7890"
+                    className={`w-full h-16 pl-14 pr-4 rounded-2xl bg-slate-950 border text-white text-xl font-medium placeholder-slate-500 focus:outline-none transition-all shadow-inner ${
+                      activeInput === 'loginId'
+                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950'
+                        : 'border-slate-700 hover:border-slate-600'
+                    }`}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              {/* Field 2: Password / 4-Digit PIN */}
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between">
+                  <label className="block text-sm sm:text-base font-bold text-slate-200">
+                    Security PIN / Password <span className="text-slate-400 text-xs font-normal">(Default: 123)</span>
+                  </label>
+                  <span className="text-xs font-medium text-emerald-400">4-अंकीय पिन / पासवर्ड</span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-slate-400">
+                    <KeyRound className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <input
+                    ref={passwordInputRef}
+                    type="password"
+                    value={password}
+                    onFocus={() => setActiveInput('password')}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrorMsg('');
+                    }}
+                    placeholder="Enter 4-digit PIN or Password (4-अंकीय पिन दर्ज करें)"
+                    className={`w-full h-16 pl-14 pr-4 rounded-2xl bg-slate-950 border text-white text-xl font-medium placeholder-slate-500 focus:outline-none transition-all shadow-inner ${
+                      activeInput === 'password'
+                        ? 'border-emerald-400 ring-2 ring-emerald-500/30 bg-slate-950'
+                        : 'border-slate-700 hover:border-slate-600'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Prominent Green CTA Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || isGuestLoading}
+                className="w-full h-16 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 disabled:opacity-50 cursor-pointer mt-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-7 h-7 animate-spin stroke-[2.5]" />
+                    <span>Verifying / सत्यापन हो रहा है...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Continue / आगे बढ़ें</span>
+                    <ArrowRight className="w-6 h-6 stroke-[3]" />
+                  </>
+                )}
+              </button>
+
+            </form>
+          </div>
+
+          {/* Quick ABHA QR Card / Scanner Button */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400">
+                <QrCode className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">Scan ABHA Card (आभा कार्ड स्कैन करें)</div>
+                <div className="text-xs text-slate-400">Hold physical Ayushman QR card against scanner</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                handleQuickDemo('14-8899-2311-5544', '123');
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-cyan-900/40 text-cyan-300 border border-slate-700 font-semibold text-xs transition"
+            >
+              Simulate Scan
+            </button>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: Keypad & Instant Emergency Bypass (lg:col-span-5) */}
+        <div className="lg:col-span-5 space-y-4">
+          
+          {/* Quick Emergency / Walk-in Bypass Card */}
+          <div 
+            onClick={!isGuestLoading ? handleInstantWalkIn : undefined}
+            className="group cursor-pointer rounded-3xl p-5 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-amber-950/30 border-2 border-rose-500/40 hover:border-rose-400 shadow-xl shadow-rose-950/20 transition-all duration-300 transform active:scale-98"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 group-hover:scale-110 transition-transform">
+                {isGuestLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
+                ) : (
+                  <HeartPulse className="w-6 h-6 text-rose-400 animate-pulse" />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wider">
+                    Instant Bypass
+                  </span>
+                  <span className="text-xs text-amber-300 font-semibold">बिना लॉगिन</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-white mt-1 group-hover:text-rose-200 transition-colors">
+                  New Patient / Instant OPD Walk-in
+                </h3>
+                <p className="text-xs font-semibold text-rose-300">
+                  आपातकालीन / नया मरीज़ (सीधा टोकन)
+                </p>
+                <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                  No ABHA ID or first time visiting? Tap to auto-generate guest ID (<strong>GUEST-OPD</strong>) and proceed immediately.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-rose-500/20 flex items-center justify-between text-xs font-bold text-rose-300">
+              <span>Skip Login & Generate Token →</span>
+              <span className="px-2 py-1 rounded-lg bg-rose-500 text-slate-950 font-black">1-TAP CHECK-IN</span>
+            </div>
+          </div>
+
+          {/* Onscreen Touch Numeric Keypad */}
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl shadow-emerald-950/30">
+            
+            {/* Keypad Header */}
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Touch Keypad ({activeInput === 'loginId' ? 'ID / Mobile' : 'PIN / Password'})
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveInput(activeInput === 'loginId' ? 'password' : 'loginId')}
+                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 transition"
+                >
+                  Switch Field ⇄
+                </button>
+              </div>
+            </div>
+
+            {/* Keypad Grid (3 columns) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+              {[
+                { label: '1', sub: '' },
+                { label: '2', sub: 'ABC' },
+                { label: '3', sub: 'DEF' },
+                { label: '4', sub: 'GHI' },
+                { label: '5', sub: 'JKL' },
+                { label: '6', sub: 'MNO' },
+                { label: '7', sub: 'PQRS' },
+                { label: '8', sub: 'TUV' },
+                { label: '9', sub: 'WXYZ' },
+                { label: 'CLEAR', action: 'CLEAR', icon: null, text: 'CLR' },
+                { label: '0', sub: '+' },
+                { label: 'BACKSPACE', action: 'BACKSPACE', icon: Delete, text: '' }
+              ].map((keyItem, index) => {
+                const isSpecial = keyItem.action === 'CLEAR' || keyItem.action === 'BACKSPACE';
+                const IconComponent = keyItem.icon;
+
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => handleKeypadPress(keyItem.action || keyItem.label)}
+                    className={`h-14 sm:h-16 rounded-2xl font-bold transition-all active:scale-95 flex flex-col items-center justify-center cursor-pointer select-none shadow-md ${
+                      isSpecial
+                        ? keyItem.action === 'BACKSPACE'
+                          ? 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/40'
+                          : 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 border border-amber-800/40 text-sm'
+                        : 'bg-slate-800/90 hover:bg-slate-750 text-white border border-slate-700/80 text-xl hover:border-emerald-500/50 hover:text-emerald-300'
+                    }`}
+                  >
+                    {IconComponent ? (
+                      <IconComponent className="w-5 h-5" />
+                    ) : (
+                      <>
+                        <span className="leading-tight">{keyItem.text || keyItem.label}</span>
+                        {keyItem.sub && (
+                          <span className="text-[9px] font-normal text-slate-400 tracking-wider">
+                            {keyItem.sub}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Common Prefixes Bar */}
+            <div className="mt-3 pt-3 border-t border-slate-800 grid grid-cols-4 gap-1.5">
+              {['98', '99', '91', '01'].map((prefix) => (
+                <button
+                  key={prefix}
+                  type="button"
+                  onClick={() => handleKeypadPress(prefix)}
+                  className="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition"
+                >
+                  +{prefix}
+                </button>
+              ))}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
+
+export default PatientLogin;
