@@ -1,65 +1,63 @@
-import mimetypes
 import os
+from typing import List, Optional
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    raise RuntimeError("GEMINI_API_KEY was not found in .env")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-client = genai.Client(api_key=api_key)
+# 1. Schema Tailored to Clinical Case Taking
+class MedicationItem(BaseModel):
+    name: str = Field(description="Name of the medicine or brand (e.g., Tab Augmentin)")
+    dosage: Optional[str] = Field(None, description="Strength (e.g., 625mg, 500mg)")
+    frequency: Optional[str] = Field(None, description="Timing pattern (e.g., 1-0-1, OD, BD, TDS, SOS)")
+    duration: Optional[str] = Field(None, description="Duration (e.g., 5 days, 1 week)")
+    instructions: Optional[str] = Field(None, description="e.g., After food, empty stomach")
 
-OCR_SYSTEM_PROMPT = """
-You are performing OCR on a handwritten medical prescription.
+class PatientCaseRecord(BaseModel):
+    clinic_or_hospital: Optional[str] = Field(None, description="Clinic / Hospital name")
+    doctor_name: Optional[str] = Field(None, description="Treating Doctor's name")
+    patient_name: Optional[str] = Field(None, description="Full name of the patient")
+    patient_age: Optional[str] = Field(None, description="Age in years")
+    patient_gender: Optional[str] = Field(None, description="Male, Female, Other, or M/F")
+    visit_date: Optional[str] = Field(None, description="Date of consultation")
+    chief_complaints: Optional[str] = Field(None, description="Symptoms / Reason for visit if recorded")
+    diagnosis: Optional[str] = Field(None, description="Provisional or final diagnosis if written")
+    medications: List[MedicationItem] = Field(default_factory=list)
+    lab_tests_advised: Optional[str] = Field(None, description="Blood work, X-Ray, MRI, etc.")
+    follow_up_advice: Optional[str] = Field(None, description="Next visit instructions or lifestyle advice")
 
-Read the prescription image carefully and transcribe ONLY the visible text.
+CASE_TAKING_PROMPT = """
+You are an expert clinical documentation assistant digitizing handwritten prescriptions and case sheets for a clinical intake system.
 
-Requirements:
-1. Preserve the original wording as much as possible.
-2. Preserve the line structure where possible.
-3. Do not summarize.
-4. Do not diagnose the patient.
-5. Do not add information that is not visible.
-6. Do not guess unclear medicine names, numbers, dosages, or dates.
-7. If something is genuinely unreadable, write [UNCLEAR].
-8. Pay special attention to:
-   - medicine names
-   - dosage
-   - frequency
-   - duration
-   - dates
-   - doctor's name
-   - instructions
+Analyze the uploaded document and transcribe all details into the schema.
 
-Return only the OCR transcription.
+Guidelines:
+1. Exact Names: Retain drug formulations (Tab, Syp, Cap, Oint) and brand names.
+2. Standardize Frequencies: Map intake instructions accurately (e.g., 1-0-1, 1-0-0, OD, BD, TDS, SOS).
+3. No Hallucinations: If any handwriting, drug, or dosage is illegible or ambiguous, transcribe that exact field as '[UNCLEAR]'.
+4. Clinical Extraction: Separate diagnostic findings, symptoms, and tests advised into their respective fields.
 """
 
-def extract_text(image_path: str) -> str:
-    absolute_path = os.path.abspath(image_path)
-    
-    if not os.path.exists(absolute_path):
-        raise FileNotFoundError(f"Prescription file not found at: {absolute_path}")
-
-    # Dynamically resolve MIME type (jpeg, png, webp, pdf)
-    mime_type, _ = mimetypes.guess_type(absolute_path)
-    if not mime_type:
+async def process_document_ocr(file_bytes: bytes, mime_type: str = "image/jpeg") -> PatientCaseRecord:
+    # Handles PDFs and images directly
+    if mime_type not in ["image/jpeg", "image/png", "image/webp", "application/pdf"]:
         mime_type = "image/jpeg"
 
-    with open(absolute_path, "rb") as image_file:
-        image_bytes = image_file.read()
-
-    response = client.models.generate_content(
+    response = await client.aio.models.generate_content(
         model="gemini-2.5-flash",
         contents=[
-            types.Part.from_bytes(
-                data=image_bytes,
-                mime_type=mime_type,
-            ),
-            OCR_SYSTEM_PROMPT,
+            types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+            CASE_TAKING_PROMPT,
         ],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=PatientCaseRecord,
+            temperature=0.1,
+        ),
     )
 
-    return response.text or ""
+    return PatientCaseRecord.model_validate_json(response.text)
