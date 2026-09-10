@@ -31,8 +31,7 @@ from ai.prompts.clinical_interview_prompt import (
 
 logger = logging.getLogger(__name__)
 
-#api_key = os.getenv("AI_API_KEY") or os.getenv("GEMINI_API_KEY")
-api_key = "AQ.Ab8RN6LOqAgYICoUCu6HjATGtcXwPdGC5aXgcWqcGjQ62811Qg"
+api_key = os.getenv("AI_API_KEY") or os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise RuntimeError("AI_API_KEY or GEMINI_API_KEY environment variable is required.")
 
