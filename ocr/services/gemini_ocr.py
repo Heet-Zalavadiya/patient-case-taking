@@ -1,41 +1,23 @@
+import mimetypes
 import os
-import base64
-
 from dotenv import load_dotenv
 from google import genai
-
+from google.genai import types
 
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
-
 if not api_key:
     raise RuntimeError("GEMINI_API_KEY was not found in .env")
 
-
 client = genai.Client(api_key=api_key)
 
-
-def extract_text(image_path: str) -> str:
-
-    with open(image_path, "rb") as image_file:
-        image_bytes = image_file.read()
-
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-
-    response = client.interactions.create(
-        model="gemini-3.8-flash",
-        input=[
-            {
-                "type": "text",
-                "text": """
+OCR_SYSTEM_PROMPT = """
 You are performing OCR on a handwritten medical prescription.
 
-Read the prescription image carefully and transcribe ONLY the
-visible text.
+Read the prescription image carefully and transcribe ONLY the visible text.
 
 Requirements:
-
 1. Preserve the original wording as much as possible.
 2. Preserve the line structure where possible.
 3. Do not summarize.
@@ -54,13 +36,30 @@ Requirements:
 
 Return only the OCR transcription.
 """
-            },
-            {
-                "type": "image",
-                "data": image_b64,
-                "mime_type": "image/png"
-            }
-        ]
+
+def extract_text(image_path: str) -> str:
+    absolute_path = os.path.abspath(image_path)
+    
+    if not os.path.exists(absolute_path):
+        raise FileNotFoundError(f"Prescription file not found at: {absolute_path}")
+
+    # Dynamically resolve MIME type (jpeg, png, webp, pdf)
+    mime_type, _ = mimetypes.guess_type(absolute_path)
+    if not mime_type:
+        mime_type = "image/jpeg"
+
+    with open(absolute_path, "rb") as image_file:
+        image_bytes = image_file.read()
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[
+            types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=mime_type,
+            ),
+            OCR_SYSTEM_PROMPT,
+        ],
     )
 
-    return response.output_text
+    return response.text or ""
