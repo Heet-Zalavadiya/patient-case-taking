@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* MediKiosk AYUSH & Clinical Design System Tokens */
+    --color-ayush-primary: #0e4d34;
+    --color-ayush-primary-dark: #093322;
+    --color-ayush-primary-subtle: #e7f3ec;
+    --color-ayush-surface: #f4f8f5;
+    --color-ayush-border: #e2ece5;
+    --color-ayush-accent: #d97706;
+    --color-ayush-accent-dark: #b45309;
+    --color-ayush-warm-bg: #fafaf7;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-ayush-warm-bg);
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* AYUSH & Clinical Custom Utilities */
+.bg-ayush-primary {
+  background-color: #0e4d34;
+}
+
+.bg-ayush-primary-dark {
+  background-color: #093322;
+}
+
+.bg-ayush-primary-subtle {
+  background-color: #e7f3ec;
+}
+
+.bg-ayush-surface {
+  background-color: #f4f8f5;
+}
+
+.bg-ayush-warm-bg {
+  background-color: #fafaf7;
+}
+
+.text-ayush-primary {
+  color: #0e4d34;
+}
+
+.text-ayush-accent {
+  color: #d97706;
+}
+
+.border-ayush-border {
+  border-color: #e2ece5;
+}
+
+.border-ayush-primary {
+  border-color: #0e4d34;
+}
+
+/* Custom clinical scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0e4d34;
+}
+
+/* Pulse animation for high priority / red flag triage */
+@keyframes alert-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(225, 29, 72, 0);
+  }
+}
+
+.animate-alert-pulse {
+  animation: alert-pulse 2s infinite ease-in-out;
+}
+
+/* Subtle card hover elevation */
+.card-hover-effect {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(14, 77, 52, 0.08), 0 8px 10px -6px rgba(14, 77, 52, 0.04);
+}
