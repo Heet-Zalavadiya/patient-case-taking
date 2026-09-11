@@ -1,4 +1,11 @@
-google-generativeai>=0.5.0
+google-genai>=0.2.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+python-multipart>=0.0.9
+opencv-python-headless>=4.8.0
 pillow>=10.0.0
+pydantic>=2.6.0
 python-dotenv>=1.0.0
-pytesseract>=0.3.10
+azure-ai-documentintelligence>=1.0.0
+rapidfuzz>=3.0.0
+numpy>=1.24.0
