@@ -25,6 +25,9 @@ const initialPatientState = {
   login_id: '',
   password: '',
   full_name: '',
+  age: null,
+  gender: '',
+  demo_chief_complaint: '',
   preferred_language: 'Hindi', // 'Hindi' | 'English' | 'Gujarati'
   accessibility_mode: 'standard', // 'standard' | 'audio-guided' | 'large-text-high-contrast'
   consents: [

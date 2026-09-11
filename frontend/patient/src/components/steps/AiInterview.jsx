@@ -369,15 +369,15 @@ export const AiInterview = () => {
     }
   };
 
-  // Auto-speak question if accessibility_mode is audio-guided
+  // Auto-speak question after 400ms delay if accessibility_mode is audio-guided
   useEffect(() => {
     if (patientData.accessibility_mode === 'audio-guided') {
       const timer = setTimeout(() => {
         handlePlayQuestion();
-      }, 500);
+      }, 400);
       return () => clearTimeout(timer);
     }
-  }, [currentQIndex]);
+  }, [currentQIndex, patientData.accessibility_mode]);
 
   // Evaluate Emergency Keywords for Red-Flag Trigger across all 6 languages
   const checkForRedFlags = (text) => {
@@ -657,6 +657,19 @@ export const AiInterview = () => {
         <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Multimodal Symptom Intake
         </h2>
+        {patientData.full_name && (
+          <div className="mt-1 flex items-center justify-center gap-2 flex-wrap">
+            <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+              Patient: <strong className="text-emerald-500">{patientData.full_name}</strong>
+              {patientData.age ? ` (${patientData.age}y • ${patientData.gender})` : ''}
+            </span>
+            {patientData.demo_chief_complaint && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 font-semibold">
+                Target Complaint: {patientData.demo_chief_complaint}
+              </span>
+            )}
+          </div>
+        )}
         <p className="text-emerald-500 font-bold text-base sm:text-lg mt-0.5">
           लक्षण एवं स्वास्थ्य इतिहास पूछताछ
         </p>
@@ -703,9 +716,22 @@ export const AiInterview = () => {
                   Preferred: {lang}
                 </span>
               </div>
-              <h3 className={`text-lg sm:text-2xl font-black leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                {currentQText}
-              </h3>
+              <div className="flex items-center gap-3">
+                <h3 className={`text-lg sm:text-2xl font-black leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {currentQText}
+                </h3>
+                
+                {/* Active Audio Wave Visual Indicator */}
+                {isPlayingAudio && (
+                  <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 shrink-0 animate-in fade-in">
+                    <span className="w-1 h-3.5 bg-cyan-400 rounded-full animate-[bounce_0.6s_infinite_100ms]" />
+                    <span className="w-1 h-5 bg-cyan-300 rounded-full animate-[bounce_0.6s_infinite_200ms]" />
+                    <span className="w-1 h-2.5 bg-cyan-400 rounded-full animate-[bounce_0.6s_infinite_300ms]" />
+                    <span className="w-1 h-4 bg-cyan-500 rounded-full animate-[bounce_0.6s_infinite_150ms]" />
+                    <span className="text-[10px] font-mono font-bold uppercase ml-1">Speaking</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -713,9 +739,9 @@ export const AiInterview = () => {
           <button
             type="button"
             onClick={handlePlayQuestion}
-            className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
+            className={`p-3 rounded-2xl border transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${
               isPlayingAudio
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse'
+                ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse shadow-md shadow-cyan-500/30'
                 : isLight
                 ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
                 : 'bg-slate-800 text-slate-200 hover:bg-slate-750 border-slate-700'
@@ -747,37 +773,32 @@ export const AiInterview = () => {
 
             <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3 mb-6">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
-                const isMild = num <= 3;
-                const isModerate = num >= 4 && num <= 6;
-                const isSevere = num >= 7 && num <= 8;
-                const isCritical = num >= 9;
+                const isMild = num <= 3; // 1 to 3: Green tint
+                const isModerate = num >= 4 && num <= 6; // 4 to 6: Yellow tint
+                const isSevere = num >= 7; // 7 to 10: Red tint with pulsing warning
 
                 return (
                   <button
                     key={num}
                     type="button"
                     onClick={() => handlePainRating(num)}
-                    className={`h-18 sm:h-22 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-200 transform active:scale-95 cursor-pointer shadow-md ${
+                    className={`h-18 sm:h-22 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-150 transform active:scale-95 cursor-pointer shadow-md select-none ${
                       isMild
                         ? isLight
-                          ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-900'
-                          : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/40 text-emerald-300'
+                          ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-400 text-emerald-950 hover:border-emerald-500 shadow-emerald-500/10'
+                          : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/50 text-emerald-300 shadow-emerald-950/30'
                         : isModerate
                         ? isLight
-                          ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900'
-                          : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/40 text-amber-300'
-                        : isSevere
-                        ? isLight
-                          ? 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-900'
-                          : 'bg-orange-950/40 hover:bg-orange-900/50 border-orange-500/40 text-orange-300'
+                          ? 'bg-amber-50 hover:bg-amber-100 border-amber-400 text-amber-950 hover:border-amber-500 shadow-amber-500/10'
+                          : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/50 text-amber-300 shadow-amber-950/30'
                         : isLight
-                        ? 'bg-rose-50 hover:bg-rose-100 border-rose-400 text-rose-900 ring-2 ring-rose-300'
-                        : 'bg-rose-950/50 hover:bg-rose-900/60 border-rose-500/60 text-rose-300 ring-2 ring-rose-500/30'
+                        ? 'bg-rose-50 hover:bg-rose-100 border-rose-500 text-rose-950 ring-2 ring-rose-400/40 animate-pulse shadow-rose-500/20'
+                        : 'bg-rose-950/60 hover:bg-rose-900/70 border-rose-500 text-rose-200 ring-2 ring-rose-500/40 animate-pulse shadow-rose-950/40'
                     }`}
                   >
                     <span className="text-xl sm:text-2xl font-black">{num}</span>
                     <span className="text-[10px] font-bold mt-1">
-                      {isMild ? '😊 Mild' : isModerate ? '😐 Mod' : isSevere ? '😣 Sev' : '😫 Crisis'}
+                      {isMild ? '😊 Mild' : isModerate ? '😐 Mod' : num <= 8 ? '😣 Severe' : '🚨 Critical'}
                     </span>
                   </button>
                 );
@@ -814,19 +835,19 @@ export const AiInterview = () => {
                   key={idx}
                   type="button"
                   onClick={() => handleAnswerSubmit(chip.label, 'touch', chip.isEmergency)}
-                  className={`p-4 rounded-2xl border text-left font-bold text-sm sm:text-base flex items-center justify-between transition-all transform active:scale-98 cursor-pointer shadow-sm ${
+                  className={`p-4 rounded-2xl border text-left font-bold text-sm sm:text-base flex items-center justify-between transition-all duration-150 transform active:scale-95 cursor-pointer shadow-sm select-none ${
                     chip.isEmergency
                       ? isLight
-                        ? 'bg-rose-50/80 hover:bg-rose-100 border-rose-300 text-rose-900 hover:border-rose-400'
-                        : 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/40 text-rose-200 hover:border-rose-400'
+                        ? 'bg-rose-50/80 hover:bg-rose-100 border-rose-300 text-rose-900 hover:border-rose-400 shadow-rose-500/10'
+                        : 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/40 text-rose-200 hover:border-rose-400 shadow-rose-950/20'
                       : isLight
-                      ? 'bg-slate-50 hover:bg-cyan-50/80 border-slate-200 text-slate-800 hover:border-cyan-400 hover:text-cyan-900'
+                      ? 'bg-slate-50 hover:bg-cyan-50/80 border-slate-200 text-slate-800 hover:border-cyan-400 hover:text-cyan-900 shadow-slate-200/50'
                       : 'bg-slate-800/80 hover:bg-slate-750 border-slate-700/80 text-slate-100 hover:border-cyan-500/50 hover:text-cyan-200'
                   }`}
                 >
                   <span className="flex-1 pr-2">{chip.label}</span>
                   {chip.isEmergency ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shrink-0 shadow-xs">
                       Emergency
                     </span>
                   ) : (
@@ -939,7 +960,7 @@ export const AiInterview = () => {
             if (currentQIndex > 0) setCurrentQIndex(prev => prev - 1);
             else prevStep();
           }}
-          className={`w-full sm:w-auto h-12 sm:h-14 px-6 rounded-2xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer ${
+          className={`w-full sm:w-auto h-12 sm:h-14 px-6 rounded-2xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 cursor-pointer select-none ${
             isLight
               ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
@@ -953,7 +974,7 @@ export const AiInterview = () => {
           type="button"
           disabled={isGeneratingSummary}
           onClick={handleFinishInterview}
-          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
+          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all duration-150 active:scale-95 cursor-pointer disabled:opacity-75 disabled:cursor-wait select-none"
         >
           {isGeneratingSummary ? (
             <>

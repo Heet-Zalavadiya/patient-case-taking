@@ -221,6 +221,43 @@ export const ConsentScreen = () => {
     setValidationError('');
   };
 
+  // 1-Tap "Accept All & Proceed" for Live Demos
+  const handleAcceptAllAndProceed = async () => {
+    setIsSubmitting(true);
+    setValidationError('');
+
+    // Strictly ensure both required database rows: data_capture and abdm_sharing
+    const guaranteedConsents = [
+      { consent_type: 'data_capture', is_granted: true, granted_via: 'touch' },
+      { consent_type: 'abdm_sharing', is_granted: true, granted_via: 'touch' }
+    ];
+
+    updatePatient({
+      consents: guaranteedConsents
+    });
+
+    try {
+      // Submit both consents to FastAPI backend
+      const consentResult = await submitConsents(
+        patientData.patient_id || 1,
+        guaranteedConsents
+      );
+
+      const assignedToken = consentResult.token_number || patientData.token_number || 'A-102';
+      setTokenNumber(assignedToken);
+      updatePatient({
+        token_number: assignedToken,
+        consents: guaranteedConsents
+      });
+      nextStep();
+    } catch (err) {
+      console.warn('Accept all consent notice:', err);
+      nextStep();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Submit and Advance
   const handleSubmit = async () => {
     if (!dataCaptureConsent.is_granted) {
@@ -231,20 +268,42 @@ export const ConsentScreen = () => {
     setIsSubmitting(true);
     setValidationError('');
 
+    // Ensure both database rows exist and are verified
+    const consentsToSubmit = [
+      {
+        consent_type: 'data_capture',
+        is_granted: Boolean(dataCaptureConsent.is_granted),
+        granted_via: dataCaptureConsent.granted_via || 'touch'
+      },
+      {
+        consent_type: 'abdm_sharing',
+        is_granted: Boolean(abdmConsent.is_granted),
+        granted_via: abdmConsent.granted_via || 'touch'
+      }
+    ];
+
     try {
-      // 1. Submit consents to FastAPI backend
+      // 1. Submit consents to FastAPI backend (both data_capture and abdm_sharing)
       const consentResult = await submitConsents(
         patientData.patient_id || 1,
-        patientData.consents || []
+        consentsToSubmit
       );
 
+      updatePatient({
+        consents: consentsToSubmit
+      });
+
       // 2. Also ensure local session onboarding token is synced
-      const result = await savePatientOnboarding(patientData);
+      const result = await savePatientOnboarding({
+        ...patientData,
+        consents: consentsToSubmit
+      });
       const assignedToken = consentResult.token_number || result.token_number || patientData.token_number || 'A-102';
 
       setTokenNumber(assignedToken);
       updatePatient({
-        token_number: assignedToken
+        token_number: assignedToken,
+        consents: consentsToSubmit
       });
       nextStep();
     } catch (err) {
@@ -559,19 +618,33 @@ export const ConsentScreen = () => {
 
       </div>
 
-      {/* Quick Action: Grant All */}
-      <div className="w-full flex justify-end mb-6">
+      {/* Quick Action: 1-Tap Accept All & Proceed (Day 4 Demo Ready) */}
+      <div className="w-full flex flex-wrap items-center justify-end gap-2.5 mb-6">
         <button
           type="button"
           onClick={handleGrantAll}
           className={`text-xs font-bold flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow transition cursor-pointer ${
             isLight
-              ? 'bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-900 shadow-sm'
-              : 'bg-teal-950/50 hover:bg-teal-900/50 border-teal-800/60 text-teal-300'
+              ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800 shadow-sm'
+              : 'bg-slate-800/80 hover:bg-slate-750 border-slate-700 text-slate-300'
           }`}
         >
           <CheckCircle2 className="w-4 h-4 text-teal-500" />
-          <span>Grant All Consents via Touch (सभी अनुमतियाँ दें)</span>
+          <span>Toggle All Consents (सभी अनुमतियाँ चालू करें)</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleAcceptAllAndProceed}
+          className="text-xs sm:text-sm font-black flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-lg shadow-teal-500/20 active:scale-98 transition cursor-pointer disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
+          ) : (
+            <Sparkles className="w-4 h-4 fill-slate-950 stroke-none" />
+          )}
+          <span>⚡ 1-Tap Accept All & Proceed (तत्काल सभी स्वीकारें)</span>
         </button>
       </div>
 

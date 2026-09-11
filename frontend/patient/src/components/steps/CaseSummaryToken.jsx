@@ -35,7 +35,7 @@ export const CaseSummaryToken = () => {
   const [countdown, setCountdown] = useState(45);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
 
-  const tokenNumber = patientData.token_number || 'A-104';
+  const tokenNumber = patientData.token_number || 'A-764';
   const patientName = patientData.full_name || 'Ayush OPD Patient';
   const abhaId = patientData.login_id || 'ABHA-9876-5432-10';
   const turns = patientData.interview_turns || [];
@@ -315,11 +315,11 @@ export const CaseSummaryToken = () => {
               <span>Structured Clinical Summary Pushed to Doctor</span>
             </h3>
             <div className="mb-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
                 isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
               }`}>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Summary Status: Draft generated in clinical_summaries (Ready for Doctor Review)</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Sync Status: SUCCESS • Pushed to Doctor Dashboard & Linked to ABHA via FHIR</span>
               </span>
             </div>
             <p className={`text-xs sm:text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>

@@ -6,6 +6,7 @@ import { ConsentScreen } from '../steps/ConsentScreen';
 import { AiInterview } from '../steps/AiInterview';
 import { DocumentUpload } from '../steps/DocumentUpload';
 import { CaseSummaryToken } from '../steps/CaseSummaryToken';
+import { speakPhrase } from '../../utils/speechUtils';
 import { 
   Activity, 
   Clock, 
@@ -22,7 +23,8 @@ import {
   Info, 
   PhoneCall,
   Sun,
-  Moon
+  Moon,
+  Volume2
 } from 'lucide-react';
 
 export const KioskShell = () => {
@@ -74,6 +76,59 @@ export const KioskShell = () => {
     { number: 5, title: 'Upload Docs', sub: 'दस्तावेज़' },
     { number: 6, title: 'Token', sub: 'टोकन' }
   ];
+
+  // Audio-guided accessibility: announce screen name after 400ms delay
+  useEffect(() => {
+    if (patientData.accessibility_mode !== 'audio-guided') return;
+    // Step 4 (AI Interview) and Step 6 (CaseSummaryToken) handle their own rich question/token narration
+    if (patientData.current_step === 4 || patientData.current_step === 6) return;
+
+    const screenAnnouncements = {
+      1: {
+        Hindi: 'मरीज़ पहचान एवं लॉगिन स्क्रीन पर आपका स्वागत है।',
+        English: 'Welcome to Patient Login. Please enter your ABHA number or mobile.',
+        Gujarati: 'દર્દી ઓળખ અને લૉગિન સ્ક્રીનમાં આપનું સ્વાગત છે.',
+        Marathi: 'रुग्ण ओळख आणि लॉगिन स्क्रीनवर आपले स्वागत आहे.',
+        Tamil: 'நோயாளி உள்நுழைவு திரைக்கு வரவேற்கிறோம்.',
+        Bengali: 'রোগী লগইন স্ক্রিনে আপনাকে স্বাগতম।'
+      },
+      2: {
+        Hindi: 'कृपया अपनी पसंदीदा भाषा चुनें।',
+        English: 'Please select your preferred language.',
+        Gujarati: 'કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો.',
+        Marathi: 'कृपया आपली पसंतीची भाषा निवडा.',
+        Tamil: 'தயவுசெய்து உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்.',
+        Bengali: 'অনুগ্রহ করে আপনার পছন্দের ভাষা নির্বাচন করুন।'
+      },
+      3: {
+        Hindi: 'डिजिटल व्यक्तिगत डेटा संरक्षण सहमति स्क्रीन।',
+        English: 'Digital Personal Data Protection Consent Screen.',
+        Gujarati: 'ડિજિટલ પર્સનલ ડેટા પ્રોટેક્શન સંમતિ સ્ક્રીન.',
+        Marathi: 'डिजिटल वैयक्तिक डेटा संरक्षण संमती स्क्रीन.',
+        Tamil: 'டிஜிட்டல் தனிநபர் தரவு பாதுகாப்பு ஒப்புதல் திரை.',
+        Bengali: 'ডিজিটাল ব্যক্তিগত ডেটা সুরক্ষা সম্মতি স্ক্রিন।'
+      },
+      5: {
+        Hindi: 'पूर्व मेडिकल पर्ची और जांच रिपोर्ट अपलोड स्क्रीन।',
+        English: 'Medical Document and Prescription Upload Screen.',
+        Gujarati: 'મેડિકલ દસ્તાવેજ અને પ્રિસ્ક્રિપ્શન અપલોડ સ્ક્રીન.',
+        Marathi: 'वैद्यकीय दस्तऐवज आणि प्रिस्क्रिप्शन अपलोड स्क्रीन.',
+        Tamil: 'மருத்துவ ஆவணங்கள் மற்றும் மருந்து சீட்டு பதிவேற்ற திரை.',
+        Bengali: 'মেডিকেল নথি এবং প্রেসক্রিপশন আপলোড স্ক্রিন।'
+      }
+    };
+
+    const currentLang = patientData.preferred_language || 'Hindi';
+    const msg = screenAnnouncements[patientData.current_step]?.[currentLang] || screenAnnouncements[patientData.current_step]?.['Hindi'];
+
+    if (!msg) return;
+
+    const t = setTimeout(() => {
+      speakPhrase(msg, currentLang);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [patientData.current_step, patientData.accessibility_mode, patientData.preferred_language]);
 
   // Render appropriate step
   const renderStepContent = () => {

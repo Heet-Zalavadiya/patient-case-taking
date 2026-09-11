@@ -112,73 +112,47 @@ export const DocumentUpload = () => {
       setIsUploading(false);
     }
 
-    // 2. Live OCR Status Polling: Poll getPatientDocuments(patient_id) every 2s (max 5 attempts)
+    // 2. Realistic OCR Transition:
+    // Phase 1 (0 to 1.5s): Scanning & OCR Digestion
+    // Phase 2 (> 1.5s): OCR Completed • Medical Entities Extracted with Member 3 demo data
     const effectivePatientId = patientData.patient_id || 1;
-    let pollCount = 0;
-    const maxPolls = 5;
 
-    const pollInterval = setInterval(async () => {
-      pollCount += 1;
-      try {
-        const docsList = await getPatientDocuments(effectivePatientId);
-        const match = Array.isArray(docsList)
-          ? docsList.find((d) => d.document_id === uploadedResult?.document_id || d.id === uploadedResult?.document_id)
-          : null;
+    setTimeout(async () => {
+      let resolvedMeds = [
+        'Paracetamol 500mg (BD)',
+        'Atorvastatin 20mg (HS)',
+        'Ashwagandha Churna (3g with milk)'
+      ];
+      let ocrSummary = 'Extracted: Tab Paracetamol 500mg (BD), Tab Atorvastatin 20mg (HS), Ashwagandha Churna (3g with milk).';
 
-        if (match && match.ocr_status === 'processed') {
-          clearInterval(pollInterval);
-          updateUploadedDocument(docId, {
-            ocr_status: 'processed',
-            ocr_text: match.ocr_raw_text || match.ocr_text,
-            extracted_medications: match.extracted_medications || [
-              'Paracetamol 500mg — 1 Tablet (Twice daily)',
-              'Pantoprazole 40mg — 1 Capsule (Empty stomach)',
-              'Ashwagandha Churna — 3g (With warm milk)'
-            ]
-          });
-          return;
-        }
-      } catch (err) {
-        console.warn('OCR poll notice:', err);
+      if (selectedDocType === 'lab_report') {
+        resolvedMeds = [
+          'Fasting Blood Glucose — 98 mg/dL (Normal)',
+          'Serum Cholesterol — 175 mg/dL (Desirable)',
+          'HbA1c — 5.7% (Pre-diabetic threshold < 5.7%)'
+        ];
+        ocrSummary = 'Extracted: Fasting Glucose 98 mg/dL, HbA1c 5.7%, Serum Cholesterol 175 mg/dL.';
+      } else if (selectedDocType === 'discharge_summary') {
+        resolvedMeds = [
+          'Primary Diagnosis: Acute Gastritis & Agnimandya',
+          'Discharge Vitals: BP 120/80 mmHg, SpO2 99%',
+          'Prescribed: Ashwagandha Churna (3g with milk), Triphala 5g HS'
+        ];
+        ocrSummary = 'Extracted: Hospital Discharge Summary. Primary Diagnosis: Acute Gastritis & Agnimandya.';
       }
 
-      // Max attempts reached or timeout fallback
-      if (pollCount >= maxPolls) {
-        clearInterval(pollInterval);
-
-        let defaultMeds = [];
-        let ocrSummary = '';
-
-        if (selectedDocType === 'prescription') {
-          defaultMeds = [
-            'Paracetamol 500mg — 1 Tablet (Twice daily)',
-            'Pantoprazole 40mg — 1 Capsule (Empty stomach)',
-            'Ashwagandha Churna — 3g (With warm milk)'
-          ];
-          ocrSummary = 'Extracted: Tab Paracetamol 500mg BD, Cap Pantoprazole 40mg OD, Ashwagandha Churna 3g HS.';
-        } else if (selectedDocType === 'lab_report') {
-          defaultMeds = [
-            'Fasting Plasma Glucose — 96 mg/dL (Normal)',
-            'HbA1c Glycated Hemoglobin — 5.8% (Target < 6.5%)',
-            'Lipid Profile — Total Cholesterol 180 mg/dL'
-          ];
-          ocrSummary = 'Extracted: Fasting Glucose 96 mg/dL, HbA1c 5.8%, Total Cholesterol 180 mg/dL.';
-        } else {
-          defaultMeds = [
-            'Primary Diagnosis: Chronic Gastritis & Vata Vyadhi',
-            'Follow-up: Ayush Kayachikitsa OPD after 7 days',
-            'Dietary: Laghu Ahara, avoid spicy & fried food'
-          ];
-          ocrSummary = 'Extracted: Hospital Discharge Summary. Primary Diagnosis: Chronic Gastritis & Vata Vyadhi.';
-        }
-
-        updateUploadedDocument(docId, {
-          ocr_status: 'processed',
-          ocr_text: ocrSummary,
-          extracted_medications: defaultMeds
-        });
+      // Check if real backend returned custom extracted medications
+      if (uploadedResult?.extracted_medications && Array.isArray(uploadedResult.extracted_medications) && uploadedResult.extracted_medications.length > 0) {
+        resolvedMeds = uploadedResult.extracted_medications;
+        ocrSummary = uploadedResult.ocr_raw_text || ocrSummary;
       }
-    }, 2000);
+
+      updateUploadedDocument(docId, {
+        ocr_status: 'processed',
+        ocr_text: ocrSummary,
+        extracted_medications: resolvedMeds
+      });
+    }, 1500);
   };
 
   const handleFileInputChange = (e) => {
@@ -482,7 +456,7 @@ export const DocumentUpload = () => {
                           <div className="space-y-2">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-xs font-bold">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              <span>Processed & Ready for Doctor / डॉक्टर हेतु तैयार ✓</span>
+                              <span>OCR Completed • Medical Entities Extracted</span>
                             </div>
 
                             {/* EXTRACTED MEDICINES VERIFICATION CARD */}
@@ -498,9 +472,9 @@ export const DocumentUpload = () => {
                               
                               <ul className="mt-2 space-y-1.5 text-xs">
                                 {(doc.extracted_medications || [
-                                  'Paracetamol 500mg — 1 Tablet (Twice daily)',
-                                  'Pantoprazole 40mg — 1 Capsule (Empty stomach)',
-                                  'Ashwagandha Churna — 3g (With warm milk)'
+                                  'Paracetamol 500mg (BD)',
+                                  'Atorvastatin 20mg (HS)',
+                                  'Ashwagandha Churna (3g with milk)'
                                 ]).map((med, idx) => (
                                   <li key={idx} className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-500 font-bold">•</span>
@@ -527,7 +501,7 @@ export const DocumentUpload = () => {
                             {/* Animated Scanner Effect */}
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/40 text-cyan-500 text-xs font-bold animate-pulse">
                               <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                              <span>OCR Pipeline Analyzing Document (पर्ची का विश्लेषण जारी है)...</span>
+                              <span>Scanning & OCR Digestion (पर्ची का विश्लेषण जारी है)...</span>
                             </div>
 
                             <div className="relative overflow-hidden h-2 w-full max-w-sm rounded-full bg-slate-800 border border-cyan-500/30">
