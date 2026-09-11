@@ -25,6 +25,11 @@ class SessionResponse(ORMModel):
     session_data_cleared: bool
 
 
+class SessionUpdate(BaseModel):
+    status: Optional[Literal["in_progress", "completed", "abandoned"]] = None
+    session_data_cleared: Optional[bool] = None
+
+
 class InterviewTurnCreate(BaseModel):
     turn_number: int
     input_mode: Literal["voice", "touch"]

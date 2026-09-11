@@ -1,5 +1,7 @@
 import hashlib
+from datetime import datetime
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import Session, joinedload
@@ -7,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from database.connection import get_db
 from models.clinical_session import ClinicalSession
 from models.clinical_summary import ClinicalSummary
+from models.consent import Consent
 from models.document_extraction import (
     DocumentExtractedCondition,
     DocumentExtractedLabValue,
@@ -34,13 +37,15 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-@router.get("/", response_model=List[PatientResponse])
+@router.get("", response_model=List[PatientResponse])
+@router.get("/", response_model=List[PatientResponse], include_in_schema=False)
 def list_patients(db: Session = Depends(get_db)):
     """List all registered patients (used for Doctor Dashboard patient list)."""
     return db.query(Patient).order_by(Patient.patient_id.desc()).all()
 
 
-@router.post("/", response_model=PatientResponse, status_code=201)
+@router.post("", response_model=PatientResponse, status_code=201)
+@router.post("/", response_model=PatientResponse, status_code=201, include_in_schema=False)
 def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
     # Check if login_id already exists
     if patient_data.login_id:
@@ -74,6 +79,31 @@ def get_patient(patient_id: int, db: Session = Depends(get_db)):
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+
+@router.post("/{patient_id}/consent", response_model=ConsentResponse, status_code=201)
+def create_patient_consent(
+    patient_id: int,
+    consent_data: ConsentCreate,
+    db: Session = Depends(get_db),
+):
+    """Save patient consent (data_capture / abdm_sharing / voice_recording via audio or touch)."""
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    consent = Consent(
+        patient_id=patient_id,
+        consent_type=consent_data.consent_type,
+        is_granted=1 if consent_data.is_granted else 0,
+        granted_via=consent_data.granted_via,
+        granted_at=datetime.now(),
+        dpdp_reference=consent_data.dpdp_reference,
+    )
+    db.add(consent)
+    db.commit()
+    db.refresh(consent)
+    return consent
 
 
 @router.get("/{patient_id}/history", response_model=List[StructuredHistoryResponse])
@@ -112,7 +142,7 @@ def get_patient_summaries(patient_id: int, db: Session = Depends(get_db)):
     return (
         db.query(ClinicalSummary)
         .filter(ClinicalSummary.patient_id == patient_id)
-        .order_by(ClinicalSummary.created_at.desc())
+        .order_by(ClinicalSummary.generated_at.desc())
         .all()
     )
 

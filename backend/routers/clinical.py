@@ -41,6 +41,7 @@ from schemas.clinical import (
     RedFlagResponse,
     SessionCreate,
     SessionResponse,
+    SessionUpdate,
     StructuredHistoryCreate,
     StructuredHistoryResponse,
     SummaryStatusUpdate,
@@ -78,6 +79,33 @@ def create_session(session_data: SessionCreate, db: Session = Depends(get_db)):
         history_mode=session_data.history_mode,
     )
     db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+@router.get("/sessions/{session_id}", response_model=SessionResponse)
+def get_session(session_id: int, db: Session = Depends(get_db)):
+    """Get details of a single clinical session."""
+    return get_session_or_404(session_id, db)
+
+
+@router.patch("/sessions/{session_id}", response_model=SessionResponse)
+def update_session(
+    session_id: int,
+    update_data: SessionUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update session status (e.g. 'completed', 'abandoned') or set session_data_cleared flag."""
+    session = get_session_or_404(session_id, db)
+    if update_data.status is not None:
+        session.status = update_data.status
+        if update_data.status == "completed":
+            from datetime import datetime
+            session.completed_at = datetime.now()
+    if update_data.session_data_cleared is not None:
+        session.session_data_cleared = update_data.session_data_cleared
+
     db.commit()
     db.refresh(session)
     return session
