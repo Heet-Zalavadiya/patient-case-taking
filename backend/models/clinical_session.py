@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.sql import func
 from database.connection import Base
 
@@ -11,4 +11,4 @@ class ClinicalSession(Base):
     started_at           = Column(DateTime,   server_default=func.now())
     completed_at         = Column(DateTime,   nullable=True)
     status               = Column(String(20), nullable=False, default="in_progress")
-    session_data_cleared = Column(Integer,    nullable=False, default=0)
+    session_data_cleared = Column(Boolean,    nullable=False, default=False)

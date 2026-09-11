@@ -18,4 +18,6 @@ def health_check():
 
 # ── Include routers ───────────────────────────────────────────────────────────
 from routers.patients import router as patients_router
+from routers.clinical import router as clinical_router
 app.include_router(patients_router)
+app.include_router(clinical_router)
