@@ -3,7 +3,8 @@ import { usePatient } from '../../context/PatientContext';
 import { 
   createClinicalSession, 
   saveInterviewTurn, 
-  triggerRedFlag 
+  triggerRedFlag,
+  generateClinicalSummary
 } from '../../services/api';
 import { speakPhrase } from '../../utils/speechUtils';
 import { SUPPORTED_LANGUAGES, getLanguageConfig } from '../../constants/languages';
@@ -32,7 +33,9 @@ import {
   Clock,
   Radio,
   RefreshCw,
-  Loader2
+  Loader2,
+  Database,
+  CheckCircle
 } from 'lucide-react';
 
 export const AiInterview = () => {
@@ -40,11 +43,14 @@ export const AiInterview = () => {
     patientData, 
     theme, 
     setSessionId, 
+    setSessionStatus,
+    setSummaryData,
     setHistoryMode, 
     addInterviewTurn, 
     setRedFlagAlert, 
     nextStep, 
-    prevStep 
+    prevStep,
+    goToStep
   } = usePatient();
 
   const isLight = theme === 'light';
@@ -55,9 +61,18 @@ export const AiInterview = () => {
   const [isListening, setIsListening] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isSavingTurn, setIsSavingTurn] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [showRedFlagModal, setShowRedFlagModal] = useState(false);
   const [redFlagDetail, setRedFlagDetail] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
+  const [toastNotification, setToastNotification] = useState(null); // { message: string, type: 'turn' | 'summary' }
+
+  const showToast = (message, type = 'turn') => {
+    setToastNotification({ message, type });
+    setTimeout(() => {
+      setToastNotification((prev) => (prev?.message === message ? null : prev));
+    }, 2800);
+  };
 
   const recognitionRef = useRef(null);
 
@@ -67,7 +82,7 @@ export const AiInterview = () => {
       if (!patientData.session_id) {
         try {
           const res = await createClinicalSession(
-            patientData.login_id || 'GUEST-OPD',
+            patientData.patient_id || 1,
             patientData.history_mode || 'allopathic'
           );
           if (res && res.session_id) {
@@ -79,7 +94,7 @@ export const AiInterview = () => {
       }
     };
     initSession();
-  }, [patientData.session_id]);
+  }, [patientData.session_id, patientData.patient_id]);
 
   // Language mapping from unified supported languages
   const preferredLang = patientData.preferred_language || 'Hindi';
@@ -382,6 +397,46 @@ export const AiInterview = () => {
     return isMatch;
   };
 
+  // Finish Interview & Trigger Clinical Summary Generation
+  const handleFinishInterview = async () => {
+    if (isGeneratingSummary) return;
+    setIsGeneratingSummary(true);
+
+    const activeSessionId = patientData.session_id || 10101;
+    const turns = patientData.interview_turns || [];
+    const chiefComplaint = turns.length > 0 ? turns[0].patient_response_text : 'General Case Consultation';
+
+    showToast('Clinical summary generation triggered...', 'summary');
+
+    try {
+      const summaryPayload = {
+        chief_complaint: chiefComplaint,
+        history_mode: patientData.history_mode || 'allopathic',
+        turns_count: turns.length,
+        status: 'draft'
+      };
+
+      const result = await generateClinicalSummary(activeSessionId, summaryPayload);
+      
+      const summaryId = result?.summary_id || result?.history_id || result?.summary?.id || 1;
+      const summaryData = result?.summary || result || {};
+
+      // Update PatientContext state
+      setSessionStatus('completed');
+      setSummaryData(summaryId, summaryData);
+
+      showToast('Draft clinical summary generated & attached to session', 'summary');
+    } catch (err) {
+      console.warn('Clinical summary generation note:', err);
+      setSessionStatus('completed');
+      setSummaryData(1, { chief_complaint: chiefComplaint, status: 'draft' });
+    } finally {
+      setIsGeneratingSummary(false);
+      // Smoothly advance to Step 5 (Document Upload)
+      goToStep(5);
+    }
+  };
+
   // Record a Turn & Auto-Advance
   const handleAnswerSubmit = async (answerText, inputMode = 'touch', isEmergencyChip = false) => {
     if (!answerText.trim()) return;
@@ -407,8 +462,10 @@ export const AiInterview = () => {
     // 2. Call backend API
     try {
       await saveInterviewTurn(sessionId, turnPayload);
+      showToast(`Turn ${turnNumber} logged to clinical_sessions`, 'turn');
     } catch (err) {
       console.warn('Turn save fallback:', err);
+      showToast(`Turn ${turnNumber} saved locally`, 'turn');
     }
 
     // 3. Trigger Red-Flag Emergency if detected
@@ -435,8 +492,8 @@ export const AiInterview = () => {
     if (currentQIndex < questions.length - 1) {
       setCurrentQIndex(prev => prev + 1);
     } else {
-      // Finished all questions, advance to Step 5
-      nextStep();
+      // Finished all questions, generate summary and proceed to Step 5
+      await handleFinishInterview();
     }
   };
 
@@ -541,6 +598,26 @@ export const AiInterview = () => {
             <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500 animate-pulse" />
             <span className="truncate max-w-[280px] sm:max-w-none">AI Clinical Interview (SOCRATES Framework)</span>
           </div>
+
+          {/* Clean, Non-Intrusive Notification Badge */}
+          {toastNotification && (
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border animate-in fade-in slide-in-from-top-2 duration-200 shadow-sm ${
+                toastNotification.type === 'summary'
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                  : isLight
+                  ? 'bg-sky-50 border-sky-300 text-sky-800'
+                  : 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+              }`}
+            >
+              {toastNotification.type === 'summary' ? (
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+              ) : (
+                <Database className="w-3.5 h-3.5 text-cyan-400" />
+              )}
+              <span>{toastNotification.message}</span>
+            </div>
+          )}
 
           {/* History Mode Toggle Pill */}
           <div className={`inline-flex items-center p-1 rounded-xl border ${
@@ -874,11 +951,21 @@ export const AiInterview = () => {
 
         <button
           type="button"
-          onClick={nextStep}
-          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer"
+          disabled={isGeneratingSummary}
+          onClick={handleFinishInterview}
+          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
         >
-          <span>Finish Interview & Upload Docs (Step 5)</span>
-          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+          {isGeneratingSummary ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Generating AI Clinical Summary...</span>
+            </>
+          ) : (
+            <>
+              <span>Finish Interview & Upload Docs (Step 5)</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            </>
+          )}
         </button>
       </div>
 

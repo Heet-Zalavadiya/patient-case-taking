@@ -11,6 +11,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
  * - current_step: number (1 to 6)
  * - token_number: string (e.g., 'A-102')
  * - session_id: number | null
+ * - session_status: 'in_progress' | 'completed' (default: 'in_progress')
+ * - summary_id: number | null
+ * - summary_data: object | null
  * - history_mode: 'allopathic' | 'ayush' (default: 'allopathic')
  * - interview_turns: array of { turn_number, input_mode, ai_question, patient_response_text, response_language }
  * - red_flag_alert: object | null
@@ -18,6 +21,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
  */
 
 const initialPatientState = {
+  patient_id: null,
   login_id: '',
   password: '',
   full_name: '',
@@ -30,6 +34,9 @@ const initialPatientState = {
   current_step: 1, // 1 to 6
   token_number: '', // e.g. 'A-102'
   session_id: null,
+  session_status: 'in_progress', // 'in_progress' | 'completed'
+  summary_id: null,
+  summary_data: null,
   history_mode: 'allopathic', // 'allopathic' | 'ayush'
   interview_turns: [],
   red_flag_alert: null,
@@ -167,10 +174,32 @@ export const PatientProvider = ({ children }) => {
   };
 
   // Day 2 Clinical Session & Intake Helpers
+  const setPatientId = (patient_id) => {
+    setPatientData((prev) => ({
+      ...prev,
+      patient_id
+    }));
+  };
+
   const setSessionId = (session_id) => {
     setPatientData((prev) => ({
       ...prev,
       session_id
+    }));
+  };
+
+  const setSessionStatus = (session_status) => {
+    setPatientData((prev) => ({
+      ...prev,
+      session_status
+    }));
+  };
+
+  const setSummaryData = (summary_id, summary_data) => {
+    setPatientData((prev) => ({
+      ...prev,
+      summary_id: summary_id || prev.summary_id,
+      summary_data: summary_data || prev.summary_data
     }));
   };
 
@@ -283,7 +312,10 @@ export const PatientProvider = ({ children }) => {
     setAccessibilityMode,
     setConsent,
     toggleConsent,
+    setPatientId,
     setSessionId,
+    setSessionStatus,
+    setSummaryData,
     setHistoryMode,
     addInterviewTurn,
     setRedFlagAlert,

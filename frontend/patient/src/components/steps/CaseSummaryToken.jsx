@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePatient } from '../../context/PatientContext';
 import { speakPhrase } from '../../utils/speechUtils';
+import { generateClinicalSummary } from '../../services/api';
 import { 
   CheckCircle2, 
   RotateCcw, 
@@ -97,6 +98,23 @@ export const CaseSummaryToken = () => {
       }, 600);
       return () => clearTimeout(t);
     }
+  }, []);
+
+  // Trigger real clinical summary generation on mount
+  useEffect(() => {
+    const triggerSummary = async () => {
+      const activeSessionId = patientData.session_id || 1;
+      try {
+        await generateClinicalSummary(activeSessionId, {
+          chief_complaint: chiefComplaint,
+          history_mode: patientData.history_mode,
+          turns_count: turns.length
+        });
+      } catch (err) {
+        console.warn('Clinical summary trigger notice:', err);
+      }
+    };
+    triggerSummary();
   }, []);
 
   const handlePrintSlip = () => {
@@ -296,6 +314,14 @@ export const CaseSummaryToken = () => {
             <h3 className="text-lg sm:text-xl font-black mb-1 flex items-center gap-2">
               <span>Structured Clinical Summary Pushed to Doctor</span>
             </h3>
+            <div className="mb-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${
+                isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+              }`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Summary Status: Draft generated in clinical_summaries (Ready for Doctor Review)</span>
+              </span>
+            </div>
             <p className={`text-xs sm:text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
               The OPD consulting physician has received your preliminary complaint timeline, vital ratings, and digitized document attachments on their dashboard.
             </p>

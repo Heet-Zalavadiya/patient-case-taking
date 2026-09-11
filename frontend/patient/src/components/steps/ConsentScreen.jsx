@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { usePatient } from '../../context/PatientContext';
+import { submitConsents, saveConsent } from '../../services/api';
 import { savePatientOnboarding } from '../../services/mockApi';
 import { speakPhrase } from '../../utils/speechUtils';
 import { 
@@ -231,16 +232,23 @@ export const ConsentScreen = () => {
     setValidationError('');
 
     try {
+      // 1. Submit consents to FastAPI backend
+      const consentResult = await submitConsents(
+        patientData.patient_id || 1,
+        patientData.consents || []
+      );
+
+      // 2. Also ensure local session onboarding token is synced
       const result = await savePatientOnboarding(patientData);
-      if (result.success) {
-        setTokenNumber(result.token_number);
-        updatePatient({
-          token_number: result.token_number
-        });
-        nextStep();
-      }
+      const assignedToken = consentResult.token_number || result.token_number || patientData.token_number || 'A-102';
+
+      setTokenNumber(assignedToken);
+      updatePatient({
+        token_number: assignedToken
+      });
+      nextStep();
     } catch (err) {
-      console.error('Submission error:', err);
+      console.error('Submission error, proceeding with session:', err);
       nextStep();
     } finally {
       setIsSubmitting(false);

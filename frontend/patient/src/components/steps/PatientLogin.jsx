@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { usePatient } from '../../context/PatientContext';
-import { loginPatient } from '../../services/mockApi';
+import { loginOrRegisterPatient } from '../../services/api';
+import { loginPatient as mockLoginPatient } from '../../services/mockApi';
 import { 
   User, 
   KeyRound, 
@@ -83,18 +84,26 @@ export const PatientLogin = () => {
     setErrorMsg('');
 
     try {
-      const response = await loginPatient(loginId.trim(), password || '123');
-      if (response.success && response.patient) {
+      const response = await loginOrRegisterPatient({
+        login_id: loginId.trim(),
+        password: password || '123',
+        full_name: `Patient (${loginId.slice(-4)})`,
+        preferred_language: patientData.preferred_language || 'Hindi',
+        accessibility_mode: patientData.accessibility_mode || 'standard'
+      });
+      if (response && (response.success || response.patient_id)) {
+        const patientObj = response.patient || response;
         updatePatient({
-          login_id: response.patient.login_id,
+          patient_id: response.patient_id || patientObj.patient_id || 1,
+          login_id: patientObj.login_id || loginId.trim(),
           password: password || '123',
-          full_name: response.patient.full_name || `Patient (${loginId.slice(-4)})`,
-          preferred_language: response.patient.preferred_language || patientData.preferred_language || 'Hindi',
-          accessibility_mode: response.patient.accessibility_mode || patientData.accessibility_mode || 'standard',
-          consents: response.patient.consents || patientData.consents,
-          token_number: response.token_number
+          full_name: patientObj.full_name || `Patient (${loginId.slice(-4)})`,
+          preferred_language: patientObj.preferred_language || patientData.preferred_language || 'Hindi',
+          accessibility_mode: patientObj.accessibility_mode || patientData.accessibility_mode || 'standard',
+          consents: patientObj.consents || patientData.consents,
+          token_number: response.token_number || patientData.token_number || 'A-101'
         });
-        setTokenNumber(response.token_number);
+        if (response.token_number) setTokenNumber(response.token_number);
         nextStep();
       }
     } catch (err) {
@@ -119,8 +128,16 @@ export const PatientLogin = () => {
     const guestId = `GUEST-OPD-${randomSuffix}`;
 
     try {
-      const response = await loginPatient(guestId, 'guest123');
+      const response = await loginOrRegisterPatient({
+        login_id: guestId,
+        password: 'guest123',
+        full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`,
+        preferred_language: patientData.preferred_language || 'Hindi',
+        accessibility_mode: patientData.accessibility_mode || 'standard'
+      });
+      const patientObj = response.patient || response;
       updatePatient({
+        patient_id: response.patient_id || patientObj.patient_id || 1,
         login_id: 'GUEST-OPD',
         password: 'guest123',
         full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`,
@@ -130,9 +147,9 @@ export const PatientLogin = () => {
           { consent_type: 'data_capture', is_granted: true, granted_via: 'touch' },
           { consent_type: 'abdm_sharing', is_granted: false, granted_via: 'touch' }
         ],
-        token_number: response.token_number
+        token_number: response.token_number || 'A-100'
       });
-      setTokenNumber(response.token_number);
+      if (response.token_number) setTokenNumber(response.token_number);
       nextStep();
     } catch (err) {
       updatePatient({
