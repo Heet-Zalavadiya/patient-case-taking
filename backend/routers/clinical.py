@@ -6,6 +6,8 @@ from models.ayush_history import AyushHistory
 from models.clinical_session import ClinicalSession
 from models.interview_turn import InterviewTurn
 from models.medical_document import MedicalDocument
+from models.extracted_medication import ExtractedMedication
+from models.extracted_lab_value import ExtractedLabValue
 from models.patient import Patient
 from models.red_flag_alert import RedFlagAlert
 from models.structured_history import StructuredHistory
@@ -14,8 +16,12 @@ from schemas.clinical import (
     AyushHistoryResponse,
     InterviewTurnCreate,
     InterviewTurnResponse,
+    LabValueCreate,
+    LabValueResponse,
     MedicalDocumentCreate,
     MedicalDocumentResponse,
+    MedicationCreate,
+    MedicationResponse,
     RedFlagCreate,
     RedFlagResponse,
     SessionCreate,
@@ -123,3 +129,46 @@ def create_document(document_data: MedicalDocumentCreate, db: Session = Depends(
     db.commit()
     db.refresh(document)
     return document
+
+
+def get_document_or_404(document_id: int, db: Session) -> MedicalDocument:
+    doc = db.query(MedicalDocument).filter(MedicalDocument.document_id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return doc
+
+
+@router.post("/documents/{document_id}/medications", response_model=list[MedicationResponse], status_code=201)
+def create_medications(
+    document_id: int,
+    meds_data: list[MedicationCreate],
+    db: Session = Depends(get_db),
+):
+    get_document_or_404(document_id, db)
+    created = []
+    for med in meds_data:
+        row = ExtractedMedication(document_id=document_id, **med.model_dump())
+        db.add(row)
+        created.append(row)
+    db.commit()
+    for row in created:
+        db.refresh(row)
+    return created
+
+
+@router.post("/documents/{document_id}/lab-values", response_model=list[LabValueResponse], status_code=201)
+def create_lab_values(
+    document_id: int,
+    labs_data: list[LabValueCreate],
+    db: Session = Depends(get_db),
+):
+    get_document_or_404(document_id, db)
+    created = []
+    for lab in labs_data:
+        row = ExtractedLabValue(document_id=document_id, **lab.model_dump())
+        db.add(row)
+        created.append(row)
+    db.commit()
+    for row in created:
+        db.refresh(row)
+    return created

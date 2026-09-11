@@ -115,3 +115,48 @@ class MedicalDocumentCreate(BaseModel):
 class MedicalDocumentResponse(MedicalDocumentCreate, ORMModel):
     document_id: int
     uploaded_at: Optional[datetime] = None
+
+
+class ConsentCreate(BaseModel):
+    patient_id: int
+    consent_type: str
+    is_granted: bool = False
+    granted_via: Optional[str] = None  # 'audio' or 'touch'
+
+
+class ConsentResponse(ORMModel):
+    consent_id: int
+    patient_id: int
+    consent_type: str
+    is_granted: int
+    granted_via: Optional[str] = None
+    granted_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    dpdp_reference: Optional[str] = None
+
+
+class MedicationCreate(BaseModel):
+    medicine_name: str
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    prescribed_date: Optional[date] = None
+    duration: Optional[str] = None
+
+
+class MedicationResponse(MedicationCreate, ORMModel):
+    medication_id: int
+    document_id: int
+
+
+class LabValueCreate(BaseModel):
+    test_name: str
+    result_value: Optional[str] = None
+    unit: Optional[str] = None
+    reference_range: Optional[str] = None
+    is_abnormal: int = 0
+    test_date: Optional[date] = None
+
+
+class LabValueResponse(LabValueCreate, ORMModel):
+    lab_value_id: int
+    document_id: int
