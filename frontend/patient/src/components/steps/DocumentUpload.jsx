@@ -164,24 +164,24 @@ export const DocumentUpload = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* 1. SCREEN HEADER */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         <div
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+          className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
             isLight
               ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-sm'
               : 'bg-teal-500/15 border-teal-500/30 text-teal-300'
           }`}
         >
-          <ScanLine className="w-4 h-4 text-teal-500 animate-pulse" />
-          <span>Step 5: Medical Records & OCR Digitization (medical_documents)</span>
+          <ScanLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-500 animate-pulse shrink-0" />
+          <span className="truncate max-w-[280px] sm:max-w-none">Step 5: Medical Records & OCR Digitization</span>
         </div>
-        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`text-xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Upload Prior Medical Records
         </h2>
-        <p className="text-teal-500 font-bold text-base sm:text-lg mt-0.5">
+        <p className="text-teal-500 font-bold text-sm sm:text-lg mt-0.5">
           पुरानी पर्चियां व जांच रिपोर्ट अपलोड करें
         </p>
         <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>

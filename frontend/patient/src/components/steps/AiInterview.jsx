@@ -6,6 +6,7 @@ import {
   triggerRedFlag 
 } from '../../services/api';
 import { speakPhrase } from '../../utils/speechUtils';
+import { SUPPORTED_LANGUAGES, getLanguageConfig } from '../../constants/languages';
 import { 
   Bot, 
   Volume2, 
@@ -80,11 +81,13 @@ export const AiInterview = () => {
     initSession();
   }, [patientData.session_id]);
 
-  // Language mapping
-  const lang = patientData.preferred_language || 'Hindi';
-  const langCode = lang === 'Gujarati' ? 'gu' : lang === 'Hindi' ? 'hi' : 'en';
+  // Language mapping from unified supported languages
+  const preferredLang = patientData.preferred_language || 'Hindi';
+  const langConfig = getLanguageConfig(preferredLang);
+  const lang = SUPPORTED_LANGUAGES[preferredLang] ? preferredLang : 'Hindi';
+  const langCode = langConfig.code;
 
-  // Smart Question Bank (SOCRATES & AYUSH Framework)
+  // Smart Question Bank (SOCRATES & AYUSH Framework) for ALL 6 Languages
   const getQuestions = () => {
     const isAyush = patientData.history_mode === 'ayush';
 
@@ -95,7 +98,10 @@ export const AiInterview = () => {
         text: {
           Hindi: 'आज आपको क्या तकलीफ़ या स्वास्थ्य समस्या हो रही है?',
           English: 'What medical issue brings you to the hospital today?',
-          Gujarati: 'આજે તમને કઈ તકલીફ અથવા સ્વાસ્થ્ય સમસ્યા થઈ રહી છે?'
+          Gujarati: 'આજે તમને કઈ તકલીફ અથવા સ્વાસ્થ્ય સમસ્યા થઈ રહી છે?',
+          Marathi: 'आज तुम्हाला काय मुख्य त्रास होत आहे?',
+          Tamil: 'இன்று உங்களுக்கு என்ன உடல்நல பிரச்சனை உள்ளது?',
+          Bengali: 'আজ আপনার কী সমস্যা হচ্ছে?'
         },
         chips: {
           Hindi: [
@@ -121,6 +127,30 @@ export const AiInterview = () => {
             { label: 'પેટમાં સખત દુખાવો', isEmergency: false },
             { label: 'શ્વાસ લેવામાં તકલીફ', isEmergency: true },
             { label: 'સાંધાનો દુખાવો અને સોજો', isEmergency: false }
+          ],
+          Marathi: [
+            { label: 'छातीत दुखणे', isEmergency: true },
+            { label: 'तीव्र ताप', isEmergency: false },
+            { label: 'डोकेदुखी', isEmergency: false },
+            { label: 'पोटात दुखणे', isEmergency: false },
+            { label: 'श्वास घेण्यास त्रास', isEmergency: true },
+            { label: 'सांधेदुखी व सूज', isEmergency: false }
+          ],
+          Tamil: [
+            { label: 'மார்பு வலி', isEmergency: true },
+            { label: 'கடுமையான காய்ச்சல்', isEmergency: false },
+            { label: 'தலைவலி', isEmergency: false },
+            { label: 'வயிற்று வலி', isEmergency: false },
+            { label: 'மூச்சுத் திணறல்', isEmergency: true },
+            { label: 'மூட்டு வலி', isEmergency: false }
+          ],
+          Bengali: [
+            { label: 'বুকে ব্যথা', isEmergency: true },
+            { label: 'তীব্র জ্বর', isEmergency: false },
+            { label: 'মাথাব্যথা', isEmergency: false },
+            { label: 'পেটে ব্যথা', isEmergency: false },
+            { label: 'শ্বাসকষ্ট', isEmergency: true },
+            { label: 'গাঁটে ব্যথা ও ফোলা', isEmergency: false }
           ]
         }
       },
@@ -130,7 +160,10 @@ export const AiInterview = () => {
         text: {
           Hindi: 'यह तकलीफ़ या दर्द कब से शुरू हुआ है?',
           English: 'When did this problem or discomfort start?',
-          Gujarati: 'આ તકલીફ કે દુખાવો ક્યારથી શરૂ થયો છે?'
+          Gujarati: 'આ તકલીફ કે દુખાવો ક્યારથી શરૂ થયો છે?',
+          Marathi: 'हा त्रास कधीपासून सुरू झाला आहे?',
+          Tamil: 'இந்த வலி எப்போது தொடங்கியது?',
+          Bengali: 'এই সমস্যাটি কখন শুরু হয়েছিল?'
         },
         chips: {
           Hindi: [
@@ -150,6 +183,24 @@ export const AiInterview = () => {
             { label: 'છેલ્લા 2-3 દિવસથી', isEmergency: false },
             { label: '1 અઠવાડિયા કરતાં વધુ સમયથી', isEmergency: false },
             { label: '1 મહિના કરતાં વધુ (જૂનો દુખાવો)', isEmergency: false }
+          ],
+          Marathi: [
+            { label: 'आज सकाळपासून', isEmergency: false },
+            { label: '२-३ दिवसांपूर्वी', isEmergency: false },
+            { label: '१ आठवड्यापेक्षा जास्त', isEmergency: false },
+            { label: '१ महिन्यापेक्षा जुना त्रास', isEmergency: false }
+          ],
+          Tamil: [
+            { label: 'இன்று முதல்', isEmergency: false },
+            { label: '2-3 நாட்களாக', isEmergency: false },
+            { label: '1 வாரத்திற்கும் மேலாக', isEmergency: false },
+            { label: '1 மாதத்திற்கும் மேலாக', isEmergency: false }
+          ],
+          Bengali: [
+            { label: 'আজ সকাল থেকে', isEmergency: false },
+            { label: '২-৩ দিন আগে', isEmergency: false },
+            { label: '১ সপ্তাহের বেশি', isEmergency: false },
+            { label: '১ মাসের বেশি সময় ধরে', isEmergency: false }
           ]
         }
       },
@@ -160,12 +211,18 @@ export const AiInterview = () => {
         text: {
           Hindi: 'दर्द या तकलीफ़ की तीव्रता 1 से 10 के पैमाने पर कितनी है?',
           English: 'How severe is your pain or discomfort on a scale of 1 to 10?',
-          Gujarati: 'દુખાવાની તીવ્રતા 1 થી 10 ના સ્કેલ પર કેટલી છે?'
+          Gujarati: 'દુખાવાની તીવ્રતા 1 થી 10 ના સ્કેલ પર કેટલી છે?',
+          Marathi: 'वेदनांची तीव्रता १ ते १० मध्ये किती आहे?',
+          Tamil: 'வலியின் தீவிரத்தை 1 முதல் 10 வரை குறிப்பிடவும்:',
+          Bengali: 'ব্যথার তীব্রতা ১ থেকে ১০ এর মধ্যে কত?'
         },
         chips: {
           Hindi: [],
           English: [],
-          Gujarati: []
+          Gujarati: [],
+          Marathi: [],
+          Tamil: [],
+          Bengali: []
         }
       },
       isAyush
@@ -175,7 +232,10 @@ export const AiInterview = () => {
             text: {
               Hindi: 'आपकी भूख और पाचन क्रिया (अग्नि) की वर्तमान स्थिति कैसी है?',
               English: 'How is your appetite, digestion, and metabolic fire (Agni)?',
-              Gujarati: 'તમારી ભૂખ અને પાચનક્રિયા (અગ્નિ) ની સ્થિતિ કેવી છે?'
+              Gujarati: 'તમારી ભૂખ અને પાચનક્રિયા (અગ્નિ) ની સ્થિતિ કેવી છે?',
+              Marathi: 'तुमची भूक आणि पचनक्रिया (अग्नि) कशी आहे?',
+              Tamil: 'உங்கள் பசி மற்றும் செரிமான திறன் (அக்னி) எவ்வாறு உள்ளது?',
+              Bengali: 'আপনার ক্ষুধা ও পরিপাক ক্ষমতা (অগ্নি) কেমন?'
             },
             chips: {
               Hindi: [
@@ -195,6 +255,24 @@ export const AiInterview = () => {
                 { label: 'ભૂખ ન લાગવી / ભારેપણું (મંદાગ્નિ)', isEmergency: false },
                 { label: 'અતિશય ભૂખ અને એસિડિટી (તીક્ષ્ણાગ્નિ)', isEmergency: false },
                 { label: 'અનિયમિત પાચન અને ગેસ (વિષમાગ્નિ)', isEmergency: false }
+              ],
+              Marathi: [
+                { label: 'नेहमीप्रमाणे भूक (समाग्नि)', isEmergency: false },
+                { label: 'भूक मंदावली आहे (मंदाग्नि)', isEmergency: false },
+                { label: 'अतिशय भूक लागते / ॲसिडिटी (तीक्ष्णाग्नि)', isEmergency: false },
+                { label: 'अनियमित भूक व गॅस (विषमाग्नि)', isEmergency: false }
+              ],
+              Tamil: [
+                { label: 'இயல்பான பசி (சமாக்னி)', isEmergency: false },
+                { label: 'பசி குறைவு / மந்தம் (மந்தாக்னி)', isEmergency: false },
+                { label: 'அதிக பசி / நெஞ்செரிச்சல் (தீக்ஷ்ணாக்னி)', isEmergency: false },
+                { label: 'ஒழுங்கற்ற செரிமானம் (விஷமாக்னி)', isEmergency: false }
+              ],
+              Bengali: [
+                { label: 'স্বাভাবিক ক্ষুধা ও হজম (সমাগ্নি)', isEmergency: false },
+                { label: 'ক্ষুধা কম / পেট ভারী (মন্দাগ্নি)', isEmergency: false },
+                { label: 'অতিরিক্ত ক্ষুধা / এসিডিটি (তীক্ষ্ণাগ্নি)', isEmergency: false },
+                { label: 'অনিয়মিত ক্ষুধা ও গ্যাস (বিষমাগ্নি)', isEmergency: false }
               ]
             }
           }
@@ -204,7 +282,10 @@ export const AiInterview = () => {
             text: {
               Hindi: 'क्या आप कोई नियमित दवा लेते हैं या पुरानी बीमारी (बीपी/शुगर) है?',
               English: 'Do you have existing chronic conditions or take daily medications?',
-              Gujarati: 'શું તમને કોઈ જૂની બીમારી (બીપી/ડાયાબિટીસ) છે અથવા નિયમિત દવા લો છો?'
+              Gujarati: 'શું તમને કોઈ જૂની બીમારી (બીપી/ડાયાબિટીસ) છે અથવા નિયમિત દવા લો છો?',
+              Marathi: 'तुम्हाला कोणताही जुना आजार (बीपी/मधुमेह) आहे का किंवा नियमित औषधे घेता का?',
+              Tamil: 'உங்களுக்கு ஏற்கனவே ஏதேனும் நாள்பட்ட நோய் உள்ளதா அல்லது மருந்துகள் உட்கொள்கிறீர்களா?',
+              Bengali: 'আপনার কি কোনো দীর্ঘস্থায়ী রোগ (বিপি/ডায়াবেটিস) আছে বা নিয়মিত ওষুধ খান?'
             },
             chips: {
               Hindi: [
@@ -227,6 +308,27 @@ export const AiInterview = () => {
                 { label: 'હાઈ બ્લડ પ્રેશર (બીપી)', isEmergency: false },
                 { label: 'દમ / અસ્થમા', isEmergency: false },
                 { label: 'હૃદય રોગનો ઈતિહાસ', isEmergency: true }
+              ],
+              Marathi: [
+                { label: 'कोणताही जुना आजार नाही (निरोगी)', isEmergency: false },
+                { label: 'मधुमेह (डायबेटिस)', isEmergency: false },
+                { label: 'उच्च रक्तदाब (बीपी)', isEmergency: false },
+                { label: 'दमा / श्वसनाचा त्रास', isEmergency: false },
+                { label: 'हृदयरोग / हार्ट हिस्ट्री', isEmergency: true }
+              ],
+              Tamil: [
+                { label: 'பழைய நோய் ஏதுமில்லை (ஆரோக்கியம்)', isEmergency: false },
+                { label: 'சர்க்கரை நோய் (நீரிழிவு)', isEmergency: false },
+                { label: 'உயர் ரத்த அழுத்தம் (BP)', isEmergency: false },
+                { label: 'ஆஸ்துமா / மூச்சு பிரச்சனை', isEmergency: false },
+                { label: 'இதய நோய் வரலாறு', isEmergency: true }
+              ],
+              Bengali: [
+                { label: 'কোনো পুরোনো রোগ নেই (সুস্থ)', isEmergency: false },
+                { label: 'ডায়াবেটিস (সুগার)', isEmergency: false },
+                { label: 'উচ্চ রক্তচাপ (বিপি)', isEmergency: false },
+                { label: 'হাঁপানি / অ্যাজমা', isEmergency: false },
+                { label: 'হৃদরোগের ইতিহাস', isEmergency: true }
               ]
             }
           }
@@ -236,7 +338,8 @@ export const AiInterview = () => {
   const questions = getQuestions();
   const currentQ = questions[currentQIndex] || questions[0];
 
-  const currentQText = currentQ.text[lang] || currentQ.text['Hindi'] || currentQ.text['English'];
+  // Clean fallback: target language -> Hindi -> English -> first available
+  const currentQText = currentQ.text[lang] || currentQ.text['Hindi'] || currentQ.text['English'] || Object.values(currentQ.text)[0];
   const currentChips = currentQ.chips[lang] || currentQ.chips['Hindi'] || currentQ.chips['English'] || [];
 
   // Play Active Question Audio
@@ -261,7 +364,7 @@ export const AiInterview = () => {
     }
   }, [currentQIndex]);
 
-  // Evaluate Emergency Keywords for Red-Flag Trigger
+  // Evaluate Emergency Keywords for Red-Flag Trigger across all 6 languages
   const checkForRedFlags = (text) => {
     const lower = text.toLowerCase();
     const redFlagPatterns = [
@@ -269,7 +372,10 @@ export const AiInterview = () => {
       'breathing difficulty', 'सांस', 'दम फूलना', 'shortness of breath',
       'severe bleeding', 'खून बहना', 'blood vomit',
       'stroke', 'लकवा', 'loss of consciousness', 'बेहोश', 'fainted',
-      'અસહ્ય છાતીમાં દુખાવો', 'શ્વાસ લેવામાં તકલીફ'
+      'અસહ્ય છાતીમાં દુખાવો', 'શ્વાસ લેવામાં તકલીફ', 'છાતી',
+      'छातीत दुखणे', 'छातीत', 'श्वास घेण्यास त्रास', 'हार्ट',
+      'மார்பு வலி', 'மார்பு', 'மூச்சுத் திணறல்', 'இதயம்',
+      'বুকে ব্যথা', 'বুকে', 'শ্বাসকষ্ট', 'হার্ট'
     ];
 
     const isMatch = redFlagPatterns.some(pattern => lower.includes(pattern));
@@ -363,9 +469,8 @@ export const AiInterview = () => {
         recognition.continuous = false;
         recognition.interimResults = true;
 
-        if (lang === 'Hindi') recognition.lang = 'hi-IN';
-        else if (lang === 'Gujarati') recognition.lang = 'gu-IN';
-        else recognition.lang = 'en-IN';
+        // Dynamically set recognition language from SUPPORTED_LANGUAGES (hi-IN, en-IN, gu-IN, mr-IN, ta-IN, bn-IN)
+        recognition.lang = langConfig?.code || 'hi-IN';
 
         recognition.onresult = (event) => {
           const transcript = Array.from(event.results)
@@ -409,7 +514,10 @@ export const AiInterview = () => {
       const sampleResponses = {
         Hindi: 'मुझे पिछले 2 दिन से तेज़ सिर दर्द और हल्का बुखार है।',
         English: 'I have had a severe headache and mild fever since yesterday.',
-        Gujarati: 'મને છેલ્લા બે દિવસથી ખૂબ માથું દુખે છે અને સામાન્ય તાવ છે.'
+        Gujarati: 'મને છેલ્લા બે દિવસથી ખૂબ માથું દુખે છે અને સામાન્ય તાવ છે.',
+        Marathi: 'मला गेल्या २ दिवसांपासून तीव्र डोकेदुखी आणि ताप जाणवत आहे.',
+        Tamil: 'எனக்கு கடந்த 2 நாட்களாக கடுமையான தலைவலியும் லேசான காய்ச்சலும் உள்ளது.',
+        Bengali: 'আমার গত ২ দিন ধরে খুব মাথা ব্যথা এবং হালকা জ্বর হচ্ছে।'
       };
       setVoiceText(sampleResponses[lang] || sampleResponses['Hindi']);
       setIsListening(false);
@@ -417,21 +525,21 @@ export const AiInterview = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* 1. TOP HEADER & TRIAGE MODE SWITCHER */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
           
           <div
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border ${
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border ${
               isLight
                 ? 'bg-cyan-50 border-cyan-300 text-cyan-800 shadow-sm'
                 : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300'
             }`}
           >
-            <Bot className="w-4 h-4 text-cyan-500 animate-pulse" />
-            <span>AI Clinical Interview (SOCRATES Framework)</span>
+            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500 animate-pulse" />
+            <span className="truncate max-w-[280px] sm:max-w-none">AI Clinical Interview (SOCRATES Framework)</span>
           </div>
 
           {/* History Mode Toggle Pill */}
@@ -738,7 +846,7 @@ export const AiInterview = () => {
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-              <span>Speaks: Hindi (hi-IN), English (en-IN), Gujarati (gu-IN)</span>
+              <span>Speaks: {langConfig.name} ({langConfig.code}) • All 6 Indian Languages Active</span>
               <span>Say "Chest Pain" or "Fever" to test Red-Flag triage</span>
             </div>
           </div>
@@ -747,14 +855,14 @@ export const AiInterview = () => {
       </div>
 
       {/* 6. NAVIGATION FOOTER */}
-      <div className="w-full flex items-center justify-between gap-4">
+      <div className="w-full flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
         <button
           type="button"
           onClick={() => {
             if (currentQIndex > 0) setCurrentQIndex(prev => prev - 1);
             else prevStep();
           }}
-          className={`h-14 px-6 rounded-2xl border font-bold text-sm flex items-center gap-2 transition active:scale-98 cursor-pointer ${
+          className={`w-full sm:w-auto h-12 sm:h-14 px-6 rounded-2xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer ${
             isLight
               ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
@@ -767,10 +875,10 @@ export const AiInterview = () => {
         <button
           type="button"
           onClick={nextStep}
-          className="h-14 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm sm:text-base flex items-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer"
+          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer"
         >
           <span>Finish Interview & Upload Docs (Step 5)</span>
-          <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
         </button>
       </div>
 
@@ -791,7 +899,15 @@ export const AiInterview = () => {
               Emergency Symptoms Detected!
             </h3>
             <p className="text-rose-400 font-bold text-base mt-1">
-              तत्काल आपातकालीन सहायता आवश्यक
+              {lang === 'Marathi'
+                ? '⚠️ तातडीचा इशारा: आपत्कालीन लक्षणे आढळली आहेत. कृपया त्वरित कॅज्युअल्टी रूम १ मध्ये जा.'
+                : lang === 'Tamil'
+                ? '⚠️ அவசர எச்சரிக்கை: அவசர சிகிச்சை அறை 1-க்கு உடனே செல்லவும்.'
+                : lang === 'Bengali'
+                ? '⚠️ জরুরি সতর্কতা: দয়া করে অবিলম্বে জরুরি বিভাগে যান।'
+                : lang === 'Gujarati'
+                ? '⚠️ કટોકટી ચેતવણી: કૃપા કરીને તાત્કાલિક કેઝ્યુઅલ્ટી રૂમ ૧ માં જાઓ.'
+                : 'तत्काल आपातकालीन सहायता आवश्यक / Immediate Casualty Assistance Required'}
             </p>
 
             <div className="my-4 p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-left text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">

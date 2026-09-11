@@ -147,42 +147,42 @@ export const PatientLogin = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* Page Title & Subtitle in English & Hindi */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+          className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
             isLight
               ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
               : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
           }`}
         >
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>Ayush Hospital OPD Kiosk Check-In / आयुष अस्पताल ओपीडी चेक-इन</span>
+          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
+          <span className="truncate max-w-[280px] sm:max-w-none">Ayush Hospital OPD Kiosk Check-In / आयुष अस्पताल ओपीडी चेक-इन</span>
         </div>
-        <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`text-xl sm:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Patient Identification & Login
         </h2>
-        <p className="text-emerald-500 font-semibold text-base sm:text-lg mt-0.5">
+        <p className="text-emerald-500 font-semibold text-sm sm:text-lg mt-0.5">
           मरीज़ पहचान एवं लॉगिन
         </p>
-        <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+        <p className={`text-xl sm:text-xl mt-1 max-w-xl mx-auto ${isLight ? 'text-blue-800' : 'text-blue-900'}`}>
           Enter your ABHA Number, Mobile, or Kiosk PIN / अपना आभा नंबर, मोबाइल या 4-अंकीय पिन दर्ज करें
         </p>
       </div>
 
       {/* Main Grid: Form on Left, Keypad & Emergency on Right */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
         
-        {/* LEFT COLUMN: Input Form (lg:col-span-7) */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* LEFT COLUMN: Input Form */}
+        <div className="space-y-4">
           
           {/* Main Card */}
           <div
-            className={`rounded-3xl p-6 sm:p-7 transition-colors duration-300 ${
+            className={`rounded-3xl p-4 sm:p-7 transition-colors duration-300 ${
               isLight
-                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl shadow-slate-300/30 text-slate-900'
+                ? 'bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl shadow-slate-300/30 text-slate-900'
                 : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 shadow-2xl shadow-emerald-950/40 text-white'
             }`}
           >
@@ -268,7 +268,7 @@ export const PatientLogin = () => {
                       setErrorMsg('');
                     }}
                     placeholder="e.g. 9876543210 or 12-3456-7890"
-                    className={`w-full h-16 pl-14 pr-4 rounded-2xl border text-xl font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
+                    className={`w-full h-12 sm:h-14 pl-12 sm:pl-14 pr-4 rounded-2xl border text-base sm:text-lg font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
                       isLight
                         ? activeInput === 'loginId'
                           ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-white text-slate-900'
@@ -291,8 +291,8 @@ export const PatientLogin = () => {
                   <span className="text-xs font-medium text-emerald-500">4-अंकीय पिन / पासवर्ड</span>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4.5 flex items-center pointer-events-none text-slate-400">
-                    <KeyRound className="w-6 h-6 text-emerald-500" />
+                  <div className="absolute inset-y-0 left-0 pl-4 sm:pl-4.5 flex items-center pointer-events-none text-slate-400">
+                    <KeyRound className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                   </div>
                   <input
                     ref={passwordInputRef}
@@ -303,8 +303,8 @@ export const PatientLogin = () => {
                       setPassword(e.target.value);
                       setErrorMsg('');
                     }}
-                    placeholder="Enter 4-digit PIN or Password (4-अंकीय पिन दर्ज करें)"
-                    className={`w-full h-16 pl-14 pr-4 rounded-2xl border text-xl font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
+                    placeholder="Enter 4-digit PIN or Password"
+                    className={`w-full h-12 sm:h-14 pl-12 sm:pl-14 pr-4 rounded-2xl border text-base sm:text-lg font-medium placeholder-slate-400 focus:outline-none transition-all shadow-inner ${
                       isLight
                         ? activeInput === 'password'
                           ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-white text-slate-900'
@@ -321,17 +321,17 @@ export const PatientLogin = () => {
               <button
                 type="submit"
                 disabled={isSubmitting || isGuestLoading}
-                className="w-full h-16 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 disabled:opacity-50 cursor-pointer mt-2"
+                className="w-full h-12 sm:h-14 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 disabled:opacity-50 cursor-pointer mt-2"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-7 h-7 animate-spin stroke-[2.5]" />
+                    <Loader2 className="w-6 h-6 animate-spin stroke-[2.5]" />
                     <span>Verifying / सत्यापन हो रहा है...</span>
                   </>
                 ) : (
                   <>
                     <span>Continue / आगे बढ़ें</span>
-                    <ArrowRight className="w-6 h-6 stroke-[3]" />
+                    <ArrowRight className="w-5 h-5 stroke-[3]" />
                   </>
                 )}
               </button>
@@ -341,19 +341,19 @@ export const PatientLogin = () => {
 
           {/* Quick ABHA QR Card / Scanner Button */}
           <div
-            className={`rounded-2xl p-4 flex items-center justify-between transition-colors ${
+            className={`rounded-2xl p-3 sm:p-4 flex items-center justify-between transition-colors ${
               isLight
-                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-md text-slate-900'
+                ? 'bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-md text-slate-900'
                 : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 text-white'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-cyan-50 text-cyan-600' : 'bg-slate-800 text-cyan-400'}`}>
-                <QrCode className="w-6 h-6" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${isLight ? 'bg-cyan-50 text-cyan-600' : 'bg-slate-800 text-cyan-400'}`}>
+                <QrCode className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <div className="text-sm font-bold">Scan ABHA Card (आभा कार्ड स्कैन करें)</div>
-                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Hold physical Ayushman QR card against scanner</div>
+                <div className="text-xs sm:text-sm font-bold">Scan ABHA Card (आभा कार्ड स्कैन)</div>
+                <div className={`text-[11px] sm:text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Hold Ayushman card against scanner</div>
               </div>
             </div>
             <button
@@ -361,7 +361,7 @@ export const PatientLogin = () => {
               onClick={() => {
                 handleQuickDemo('14-8899-2311-5544', '123');
               }}
-              className={`px-4 py-2 rounded-xl border font-semibold text-xs transition ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border font-semibold text-xs transition shrink-0 ${
                 isLight
                   ? 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300'
                   : 'bg-slate-800 hover:bg-cyan-900/40 text-cyan-300 border-slate-700'
@@ -373,8 +373,8 @@ export const PatientLogin = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: Keypad & Instant Emergency Bypass (lg:col-span-5) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* RIGHT COLUMN: Keypad & Instant Emergency Bypass */}
+        <div className="space-y-4">
           
           {/* Quick Emergency / Walk-in Bypass Card */}
           <div 
@@ -437,9 +437,9 @@ export const PatientLogin = () => {
 
           {/* Onscreen Touch Numeric Keypad */}
           <div
-            className={`rounded-3xl p-4 sm:p-5 shadow-xl transition-colors duration-300 ${
+            className={`w-full max-w-sm mx-auto rounded-3xl p-4 sm:p-5 shadow-xl transition-colors duration-300 ${
               isLight
-                ? 'bg-white/90 backdrop-blur-md border border-slate-200 shadow-slate-300/30 text-slate-900'
+                ? 'bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-slate-300/30 text-slate-900'
                 : 'bg-slate-900/85 backdrop-blur-md border border-slate-700/60 shadow-emerald-950/30 text-white'
             }`}
           >

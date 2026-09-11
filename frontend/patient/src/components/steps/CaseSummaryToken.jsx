@@ -64,28 +64,24 @@ export const CaseSummaryToken = () => {
     return () => clearInterval(timer);
   }, [isTimerPaused, resetSession]);
 
-  // Spoken audio confirmation
+  // Spoken audio confirmation for all 6 languages
   const playAudioConfirmation = async () => {
     setIsPlayingAudio(true);
-    let message = 'आपका केस विवरण सफलतापूर्वक डॉक्टर तक पहुँचा दिया गया है। कृपया कमरा नंबर 4 के बाहर प्रतीक्षा करें।';
-    let code = 'hi';
+    const langKey = patientData.preferred_language || 'Hindi';
 
-    if (patientData.preferred_language === 'English') {
-      message = 'Your case summary has been successfully submitted to the doctor. Please wait outside Room Number 4.';
-      code = 'en';
-    } else if (patientData.preferred_language === 'Gujarati') {
-      message = 'તમારો કેસ સારાંશ ડૉક્ટર સુધી સફળતાપૂર્વક મોકલી દેવાયો છે. કૃપા કરીને રૂમ નંબર 4 ની બહાર પ્રતીક્ષા કરો.';
-      code = 'gu';
-    } else if (patientData.preferred_language === 'Marathi') {
-      message = 'तुमचा केस सारांश डॉक्टरांकडे यशस्वीरित्या पाठवला आहे. कृपया रूम नंबर 4 बाहेर प्रतीक्षा करा.';
-      code = 'mr';
-    } else if (patientData.preferred_language === 'Tamil') {
-      message = 'உங்கள் வழக்கு சுருக்கம் மருத்துவரிடம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. அறை எண் 4 வெளியே காத்திருக்கவும்.';
-      code = 'ta';
-    }
+    const confirmationMessages = {
+      Hindi: 'आपका केस विवरण सफलतापूर्वक डॉक्टर तक पहुँचा दिया गया है। कृपया कमरा नंबर 4 के बाहर प्रतीक्षा करें।',
+      English: 'Your case summary has been successfully submitted to the doctor. Please wait outside Room Number 4.',
+      Gujarati: 'તમારો કેસ સારાંશ ડૉક્ટર સુધી સફળતાપૂર્વક મોકલી દેવાયો છે. કૃપા કરીને રૂમ નંબર 4 ની બહાર પ્રતીક્ષા કરો.',
+      Marathi: 'तुमचा केस सारांश डॉक्टरांकडे यशस्वीरित्या पाठवला आहे. कृपया रूम नंबर 4 बाहेर प्रतीक्षा करा.',
+      Tamil: 'உங்கள் வழக்கு சுருக்கம் மருத்துவரிடம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. அறை எண் 4 வெளியே காத்திருக்கவும்.',
+      Bengali: 'আপনার কেস সারাংশ সফলভাবে ডাক্তারের কাছে জমা দেওয়া হয়েছে। অনুগ্রহ করে ৪ নম্বর ঘরের বাইরে অপেক্ষা করুন।'
+    };
+
+    const message = confirmationMessages[langKey] || confirmationMessages['Hindi'];
 
     try {
-      await speakPhrase(message, code);
+      await speakPhrase(message, langKey);
     } catch (e) {
       console.warn('Speech confirmation note:', e);
     } finally {
@@ -111,16 +107,16 @@ export const CaseSummaryToken = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* 1. TOP HEADER & DPDP RESET BAR */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         
         {/* DPDP Countdown Banner */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold mb-2.5 border shadow-sm transition-all">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+        <div className="inline-flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold mb-2 border shadow-sm transition-all max-w-full flex-wrap justify-center">
+          <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 animate-ping" />
           <span className={isLight ? 'text-slate-800' : 'text-slate-200'}>
-            DPDP Privacy Protection: Auto-resetting kiosk in <strong className="text-emerald-500 font-mono text-sm">{countdown}s</strong>
+            DPDP Privacy Protection: Auto-resetting in <strong className="text-emerald-500 font-mono text-sm">{countdown}s</strong>
           </span>
           <button
             type="button"
@@ -134,22 +130,22 @@ export const CaseSummaryToken = () => {
           </button>
         </div>
 
-        <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Intake Complete, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500">{patientName}</span>!
         </h2>
-        <p className={`text-sm sm:text-base mt-1 max-w-xl mx-auto font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+        <p className={`text-xs sm:text-base mt-1 max-w-xl mx-auto font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Your complete clinical history and digitized records have been transmitted to the attending doctor.
         </p>
       </div>
 
       {/* 2. MAIN GRID: TOKEN CARD ON LEFT, CLINICAL SUMMARY ON RIGHT */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch mb-6">
         
         {/* LEFT COLUMN: Official OPD Token Card (lg:col-span-5) */}
         <div
-          className={`lg:col-span-5 rounded-3xl p-6 sm:p-7 border-2 backdrop-blur-md flex flex-col justify-between shadow-2xl relative overflow-hidden ${
+          className={`lg:col-span-5 rounded-3xl p-4 sm:p-7 border-2 backdrop-blur-md flex flex-col justify-between shadow-2xl relative overflow-hidden ${
             isLight
-              ? 'bg-gradient-to-b from-white via-emerald-50/40 to-slate-50 border-emerald-500/80 shadow-emerald-900/10 text-slate-900'
+              ? 'bg-gradient-to-b from-white via-emerald-50/60 to-slate-50 border-emerald-500/80 shadow-emerald-900/10 text-slate-900'
               : 'bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border-emerald-500/60 shadow-emerald-950/50 text-white'
           }`}
         >

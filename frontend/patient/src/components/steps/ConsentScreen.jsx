@@ -21,10 +21,12 @@ import {
   Radio
 } from 'lucide-react';
 
+import { SUPPORTED_LANGUAGES, getLanguageConfig } from '../../constants/languages';
+
 export const ConsentScreen = () => {
   const { 
     patientData, 
-    theme,
+    theme, 
     setConsent, 
     toggleConsent, 
     nextStep, 
@@ -53,7 +55,7 @@ export const ConsentScreen = () => {
     granted_via: 'touch'
   };
 
-  // Translations for DPDP Consent Terms
+  // Translations for DPDP Consent Terms across all 6 Languages
   const consentTexts = {
     Hindi: {
       data_capture: {
@@ -65,6 +67,18 @@ export const ConsentScreen = () => {
         title: '2. आभा (ABHA) और डिजिटल हेल्थ रिकॉर्ड शेयरिंग',
         desc: 'मैं इस ओपीडी सारांश को अपने आभा (ABHA) स्वास्थ्य खाते से जोड़ने की सहमति देता/देती हूँ।',
         listenText: 'आभा सहमति: मैं इस ओपीडी परामर्श को अपने आभा डिजिटल हेल्थ खाते से जोड़ने की सहमति देता हूँ।'
+      }
+    },
+    English: {
+      data_capture: {
+        title: '1. Clinical AI Symptom & Case History Capture',
+        desc: 'I consent to AI capturing my symptoms and medical history for the doctor triage.',
+        listenText: 'I consent to AI capturing my reported symptoms and medical history for the OPD doctor preparation.'
+      },
+      abdm_sharing: {
+        title: '2. ABDM & Ayush Health Grid Sharing',
+        desc: 'I consent to linking this clinical summary with my ABHA health record.',
+        listenText: 'I consent to linking this OPD consultation summary with my Ayushman Bharat Health Account.'
       }
     },
     Gujarati: {
@@ -79,31 +93,55 @@ export const ConsentScreen = () => {
         listenText: 'હું આ ઓપીડી સારાંશને મારા આભા એકાઉન્ટ સાથે જોડવાની સંમતિ આપું છું.'
       }
     },
-    English: {
+    Marathi: {
       data_capture: {
-        title: '1. Clinical AI Symptom & Case History Capture',
-        desc: 'I consent to AI capturing my symptoms and medical history for the doctor triage.',
-        listenText: 'I consent to AI capturing my reported symptoms and medical history for the OPD doctor preparation.'
+        title: '1. क्लिनिकल लक्षणे व AI केस टेकिंग संमती',
+        desc: 'मी डॉक्टरांच्या तपासणीसाठी AI द्वारे माझी लक्षणे आणि वैद्यकीय इतिहास नोंदवण्यास संमती देतो/देते.',
+        listenText: 'क्लिनिकल इनटेक संमती: मी डॉक्टरांच्या तपासणीसाठी AI द्वारे माझी लक्षणे नोंदवण्यास संमती देतो.'
       },
       abdm_sharing: {
-        title: '2. ABDM & Ayush Health Grid Sharing',
-        desc: 'I consent to linking this clinical summary with my ABHA health record.',
-        listenText: 'I consent to linking this OPD consultation summary with my Ayushman Bharat Health Account.'
+        title: '2. आभा (ABHA) व डिजिटल हेल्थ रेकॉर्ड शेअरिंग',
+        desc: 'मी हा ओपीडी सारांश माझ्या आभा (ABHA) आरोग्य खात्याशी जोडण्यास संमती देतो/देते.',
+        listenText: 'आभा संमती: मी हा ओपीडी सारांश माझ्या आभा डिजिटल आरोग्य खात्याशी जोडण्यास संमती देतो.'
+      }
+    },
+    Tamil: {
+      data_capture: {
+        title: '1. மருத்துவ அறிகுறிகள் மற்றும் AI கேஸ் டேக்கிங் ஒப்புதல்',
+        desc: 'மருத்துவர் ஆலோசனைக்காக AI மூலம் எனது அறிகுறிகள் மற்றும் மருத்துவ வரலாற்றை பதிவு செய்ய ஒப்புக்கொள்கிறேன்.',
+        listenText: 'மருத்துவ ஒப்புதல்: மருத்துவர் ஆலோசனைக்காக AI மூலம் அறிகுறிகளைப் பதிவு செய்ய நான் ஒப்புக்கொள்கிறேன்.'
+      },
+      abdm_sharing: {
+        title: '2. ஆயுஷ்மான் பாரத் (ABHA) டிஜிட்டல் பகிர்வு',
+        desc: 'இந்த மருத்துவ சுருக்கத்தை எனது ஆயுஷ்மான் பாரத் (ABHA) சுகாதார கணக்குடன் இணைக்க ஒப்புக்கொள்கிறேன்.',
+        listenText: 'ஆபா ஒப்புதல்: இந்த மருத்துவ ஆலோசனையை எனது ஆபா கணக்குடன் இணைக்க ஒப்புக்கொள்கிறேன்.'
+      }
+    },
+    Bengali: {
+      data_capture: {
+        title: '1. ক্লিনিকাল লক্ষণ এবং AI কেস টেকিং সম্মতি',
+        desc: 'আমি ডাক্তারের পরামর্শের জন্য AI দ্বারা আমার লক্ষণ এবং চিকিৎসার ইতিহাস রেকর্ড করতে সম্মতি দিচ্ছি।',
+        listenText: 'ক্লিনিকাল সম্মতি: আমি ডাক্তারের পরামর্শের জন্য AI দ্বারা আমার লক্ষণ রেকর্ড করার সম্মতি দিচ্ছি।'
+      },
+      abdm_sharing: {
+        title: '2. আভা (ABHA) এবং ডিজিটাল স্বাস্থ্য রেকর্ড ভাগাভাগি',
+        desc: 'আমি এই ওপিডি সারাংশ আমার আভা (ABHA) স্বাস্থ্য অ্যাকাউন্টের সাথে যুক্ত করার সম্মতি দিচ্ছি।',
+        listenText: 'আভা সম্মতি: আমি এই ওপিডি সারাংশ আমার আভা ডিজিটাল স্বাস্থ্য অ্যাকাউন্টের সাথে যুক্ত করতে সম্মতি দিচ্ছি।'
       }
     }
   };
 
-  const currentLang = consentTexts[patientData.preferred_language] ? patientData.preferred_language : 'English';
-  const texts = consentTexts[currentLang];
+  const selectedLang = patientData.preferred_language || 'Hindi';
+  const langConfig = getLanguageConfig(selectedLang);
+  const texts = consentTexts[selectedLang] || consentTexts['Hindi'] || consentTexts['English'];
 
   // Speak Consent Terms with robust Indian voice fallback
   const handleListenConsent = async (type) => {
     setSpeakingConsent(type);
     const textToSpeak = texts[type]?.listenText || '';
-    const langCode = patientData.preferred_language === 'Gujarati' ? 'gu' : patientData.preferred_language === 'Hindi' ? 'hi' : 'en';
 
     try {
-      await speakPhrase(textToSpeak, langCode);
+      await speakPhrase(textToSpeak, langConfig.code);
     } catch (err) {
       console.warn('Consent audio note:', err);
     } finally {
@@ -123,9 +161,8 @@ export const ConsentScreen = () => {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        if (patientData.preferred_language === 'Hindi') recognition.lang = 'hi-IN';
-        else if (patientData.preferred_language === 'Gujarati') recognition.lang = 'gu-IN';
-        else recognition.lang = 'en-IN';
+        // Dynamically set recognition language from SUPPORTED_LANGUAGES
+        recognition.lang = langConfig?.code || 'hi-IN';
 
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript.toLowerCase();
@@ -133,7 +170,7 @@ export const ConsentScreen = () => {
           setConsent(type, true, 'audio');
           setAudioFeedback((prev) => ({
             ...prev,
-            [type]: `Voice Verified: "${transcript}" (Audio Consent Granted)`
+            [type]: `Voice Verified: "${transcript}" (Audio Consent Granted ✓)`
           }));
           setListeningFor(null);
         };
@@ -159,9 +196,18 @@ export const ConsentScreen = () => {
   const fallbackAudioGrant = (type) => {
     setTimeout(() => {
       setConsent(type, true, 'audio');
+      const voiceSamples = {
+        Hindi: 'मैं सहमत हूँ / I Agree',
+        English: 'I Agree / Consent Granted',
+        Gujarati: 'હું સહમત છું / I Agree',
+        Marathi: 'मी सहमत आहे / I Agree',
+        Tamil: 'நான் ஒப்புக்கொள்கிறேன் / I Agree',
+        Bengali: 'আমি সম্মত / I Agree'
+      };
+      const sampleText = voiceSamples[selectedLang] || voiceSamples['Hindi'];
       setAudioFeedback((prev) => ({
         ...prev,
-        [type]: 'Audio Consent Captured: "मैं सहमत हूँ / I Agree" (Audio Granted ✓)'
+        [type]: `Audio Consent Captured: "${sampleText}" (Audio Granted ✓)`
       }));
       setListeningFor(null);
     }, 1200);
@@ -202,24 +248,24 @@ export const ConsentScreen = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* 1. SCREEN HEADER */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+          className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
             isLight
               ? 'bg-teal-50 border-teal-300 text-teal-800'
               : 'bg-teal-500/10 border-teal-500/30 text-teal-300'
           }`}
         >
-          <Lock className="w-4 h-4 text-teal-500" />
-          <span>DPDP Act 2023 & Ayushman Bharat (ABDM) Compliance</span>
+          <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-500 shrink-0" />
+          <span className="truncate max-w-[280px] sm:max-w-none">DPDP Act 2023 & Ayushman Bharat (ABDM) Compliance</span>
         </div>
-        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`text-xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Patient Consent & Data Privacy
         </h2>
-        <p className="text-xl sm:text-2xl font-bold text-teal-500 mt-0.5">
+        <p className="text-lg sm:text-2xl font-bold text-teal-500 mt-0.5">
           मरीज़ सहमति एवं डेटा गोपनीयता
         </p>
         <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
@@ -239,13 +285,13 @@ export const ConsentScreen = () => {
         
         {/* CONSENT 1: Clinical Data Capture */}
         <div 
-          className={`rounded-3xl p-5 sm:p-6 transition-all duration-200 border ${
+          className={`rounded-3xl p-4 sm:p-6 transition-all duration-200 border ${
             dataCaptureConsent.is_granted
               ? isLight
-                ? 'bg-teal-50/90 border-2 border-teal-500 shadow-xl shadow-teal-100/50 ring-2 ring-teal-500/20 text-slate-900'
+                ? 'bg-teal-50/95 border-2 border-teal-500 shadow-xl shadow-teal-100/50 ring-2 ring-teal-500/20 text-slate-900'
                 : 'bg-slate-900/95 border-2 border-teal-400 shadow-xl shadow-teal-500/10 ring-2 ring-teal-500/20 text-white'
               : isLight
-              ? 'bg-white/90 border-slate-200 shadow-md text-slate-900 hover:border-slate-300'
+              ? 'bg-white/95 border-slate-200/90 shadow-md text-slate-900 hover:border-slate-300'
               : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 text-white'
           }`}
         >
@@ -522,20 +568,20 @@ export const ConsentScreen = () => {
       </div>
 
       {/* 3. NAVIGATION BAR */}
-      <div className="w-full flex items-center justify-between gap-4">
+      <div className="w-full flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
         
         {/* Back Button */}
         <button
           type="button"
           onClick={prevStep}
           disabled={isSubmitting}
-          className={`h-16 px-6 sm:px-8 rounded-2xl border font-bold text-base flex items-center gap-2.5 transition active:scale-98 cursor-pointer disabled:opacity-50 shadow-md ${
+          className={`w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-8 rounded-2xl border font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition active:scale-98 cursor-pointer disabled:opacity-50 shadow-md ${
             isLight
               ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-slate-200/50'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
           }`}
         >
-          <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
           <span>Back / पीछे जाएँ</span>
         </button>
 
@@ -544,17 +590,17 @@ export const ConsentScreen = () => {
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="h-16 px-8 sm:px-10 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-lg sm:text-xl flex items-center gap-3 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+          className="w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-10 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-base sm:text-xl flex items-center justify-center gap-2.5 sm:gap-3 shadow-xl shadow-teal-500/25 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-7 h-7 animate-spin stroke-[2.5]" />
+              <Loader2 className="w-6 h-6 animate-spin stroke-[2.5]" />
               <span>Transmitting Onboarding Data...</span>
             </>
           ) : (
             <>
               <span>Confirm & Generate Token / टोकन जारी करें</span>
-              <ArrowRight className="w-6 h-6 stroke-[3]" />
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
             </>
           )}
         </button>

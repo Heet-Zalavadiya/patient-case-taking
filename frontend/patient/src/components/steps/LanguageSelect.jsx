@@ -150,33 +150,33 @@ export const LanguageSelect = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col">
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
       
       {/* 1. SCREEN HEADER */}
-      <div className="mt-2 mb-4 text-center">
+      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
+          className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
             isLight
               ? 'bg-cyan-50 border-cyan-300 text-cyan-800'
               : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
           }`}
         >
-          <Languages className="w-4 h-4 text-cyan-500" />
+          <Languages className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500 shrink-0" />
           <span>Multilingual Touch Terminal • बहुभाषी टच टर्मिनल</span>
         </div>
-        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`text-xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Please Select Your Preferred Language
         </h2>
-        <p className="text-xl sm:text-2xl font-bold text-cyan-500 mt-0.5">
+        <p className="text-lg sm:text-2xl font-bold text-cyan-500 mt-0.5">
           कृपया अपनी भाषा चुनें
         </p>
-        <p className={`text-xs sm:text-sm mt-1.5 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+        <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Your entire medical intake and audio guidance will adapt to your choice.
         </p>
       </div>
 
       {/* 2. KIOSK LANGUAGE GRID (6 Large Touchable Cards) */}
-      <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5 mb-6">
+      <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 mb-5 sm:mb-6">
         {languages.map((lang) => {
           const isSelected = patientData.preferred_language === lang.id;
           const isPlaying = playingLang === lang.id;
@@ -185,13 +185,13 @@ export const LanguageSelect = () => {
             <div
               key={lang.id}
               onClick={() => handleSelectLanguage(lang.id)}
-              className={`group relative cursor-pointer rounded-3xl p-4 sm:p-6 transition-all duration-200 transform flex flex-col justify-between min-h-[160px] sm:min-h-[190px] border select-none ${
+              className={`group relative cursor-pointer rounded-3xl p-3.5 sm:p-5 transition-all duration-200 transform flex flex-col justify-between min-h-[140px] sm:min-h-[175px] border select-none ${
                 isSelected
                   ? isLight
                     ? 'bg-emerald-50/95 border-2 border-emerald-500 shadow-xl shadow-emerald-100/50 scale-[1.02] ring-4 ring-emerald-500/20 text-slate-900'
                     : 'bg-slate-800/95 border-2 border-emerald-400 shadow-2xl shadow-emerald-500/25 scale-[1.02] ring-4 ring-emerald-500/20 text-white'
                   : isLight
-                  ? 'bg-white/90 hover:bg-slate-50 border-slate-200 shadow-md text-slate-900'
+                  ? 'bg-white/95 hover:bg-slate-50 border-slate-200/90 shadow-md text-slate-900'
                   : 'bg-slate-900/80 hover:bg-slate-800/80 border-slate-800 hover:border-slate-700 shadow-lg text-white'
               }`}
             >
@@ -437,19 +437,19 @@ export const LanguageSelect = () => {
       </div>
 
       {/* 4. NAVIGATION BAR */}
-      <div className="w-full flex items-center justify-between gap-4">
+      <div className="w-full flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
         
         {/* Back Button */}
         <button
           type="button"
           onClick={prevStep}
-          className={`h-16 px-6 sm:px-8 rounded-2xl border font-bold text-base flex items-center gap-2.5 transition active:scale-98 cursor-pointer shadow-md ${
+          className={`w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-8 rounded-2xl border font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition active:scale-98 cursor-pointer shadow-md ${
             isLight
               ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-slate-200/50'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
           }`}
         >
-          <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
           <span>Back / पीछे जाएँ</span>
         </button>
 
@@ -457,10 +457,10 @@ export const LanguageSelect = () => {
         <button
           type="button"
           onClick={nextStep}
-          className="h-16 px-8 sm:px-10 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-lg sm:text-xl flex items-center gap-3 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 cursor-pointer"
+          className="w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-10 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base sm:text-xl flex items-center justify-center gap-2.5 sm:gap-3 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 cursor-pointer"
         >
           <span>Confirm Language / भाषा की पुष्टि करें</span>
-          <ArrowRight className="w-6 h-6 stroke-[3]" />
+          <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
         </button>
 
       </div>
