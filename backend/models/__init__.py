@@ -7,3 +7,5 @@ from .structured_history import StructuredHistory
 from .ayush_history import AyushHistory
 from .red_flag_alert import RedFlagAlert
 from .medical_document import MedicalDocument
+from .extracted_medication import ExtractedMedication
+from .extracted_lab_value import ExtractedLabValue

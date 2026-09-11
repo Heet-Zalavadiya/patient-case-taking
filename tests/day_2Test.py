@@ -133,6 +133,9 @@ def test_chain_4_doctor_dashboard_retrieval(patient_id):
     assert res_history.status_code == 200, "Failed to get patient history"
     history = res_history.json()
     assert history.get("chief_complaint") == "Chest pain", "Chief complaint mismatch in doctor view"
+    history_list = res_history.json()
+    assert len(history_list) > 0, "No history records returned for patient"
+    assert history_list[0].get("chief_complaint") == "Chest pain", "Chief complaint mismatch in doctor view"
     print("PASS: Doctor can retrieve full structured history")
 
 if __name__ == "__main__":
