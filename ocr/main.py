@@ -4,8 +4,13 @@ from services.hybrid_ocr import process_hybrid_ocr, ClinicalSummary
 
 app = FastAPI(
     title="MediKiosk Hybrid Vision OCR Microservice",
-    description="Stage 1: OpenCV+EasyOCR | Stage 2: Groq Llama-3.3-70B Structuring",
-    version="1.0.0"
+    description=(
+        "Stage 1: Azure Document Intelligence (prebuilt-read) — spatial 2D OCR | "
+        "Stage 1.5: Deterministic dosage/frequency pairing (Python, no ML) | "
+        "Stage 2: Gemini LLM structuring (gemini-3.6-flash, temp=0.0) | "
+        "Stage 3: RapidFuzz drug DB verification (offline, Indian pharma)"
+    ),
+    version="2.0.0"
 )
 
 app.add_middleware(

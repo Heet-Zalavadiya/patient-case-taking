@@ -3,7 +3,7 @@ Hybrid Prescription OCR Service
 ================================
 Stage 1  : Azure Document Intelligence (prebuilt-read) — cloud OCR with full 2D spatial geometry
 Stage 1.5: Deterministic dosage / frequency pairing (Python, no ML)
-Stage 2  : Groq LLM structuring (openai/gpt-oss-120b, temperature=0.0)
+Stage 2  : Gemini llm structuring (gemini 3.5 flash, temperature=0.0)
 Stage 3  : RapidFuzz drug database verification (local, deterministic)
 Stage 4  : Local regex fallback (safety net)
 """
@@ -177,6 +177,91 @@ class ClinicalSummary(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# CLINICAL DRUG OVERRIDE CONFIG
+# ---------------------------------------------------------------------------
+# Single source of truth for all ambiguous-frequency corrections.
+# Used by BOTH Stage 1.5 (expand_freq_token) and Stage 2 post-processing.
+#
+# To support a new drug / drug class:
+#   1. Add keywords to an existing entry, OR
+#   2. Append a new dict to this list.
+# Zero other code changes required.
+# ---------------------------------------------------------------------------
+DRUG_CLINICAL_OVERRIDES = [
+    {
+        # Oral antibiotics — commonly prescribed BD; faint middle stroke misread as 0
+        "drug_class": "oral_antibiotic",
+        "match_keywords": [
+            "augmentin", "amoxicillin", "amox", "clavulanic", "clav",
+            "azithromycin", "azithral", "azee", "zithromax",
+            "cefixime", "taxim", "cefix", "cefpodoxime",
+            "doxycycline", "doxy", "vibramycin",
+            "metronidazole", "flagyl", "metrogyl",
+            "ciprofloxacin", "cifran", "ciplox",
+            "levofloxacin", "levaquin", "levoday",
+            "clarithromycin", "claritek", "biaxin",
+            "ampiclox", "ampicillin",
+        ],
+        "ambiguous_freq_patterns": ["1 - 0", "1-0"],
+        "correct_freq": "Twice daily (Morning, Night)",
+        "is_topical": False,
+    },
+    {
+        # PPIs / antacids — once daily in the morning before breakfast
+        "drug_class": "ppi_antacid",
+        "match_keywords": [
+            "pantoprazole", "pan-d", "pand", "pantosec", "pantodac", "pantop",
+            "rabeprazole", "rablet", "rab", "rabonik", "veloz", "rabeloc",
+            "omeprazole", "omez", "prilosec", "ocid",
+            "esomeprazole", "nexium", "nexpro", "esoz",
+            "lansoprazole", "lanzol", "lanpro",
+            "dexlansoprazole", "dexilant",
+            "ppi", "antacid",
+        ],
+        "ambiguous_freq_patterns": ["0 - 0", "0-0", "1 - 0", "1-0"],
+        "correct_freq": "Once daily (Morning)",
+        "is_topical": False,
+    },
+    {
+        # NSAIDs / analgesics — typically BD; middle stroke often faint
+        "drug_class": "nsaid_analgesic",
+        "match_keywords": [
+            "enzoflam", "diclofenac", "voveran", "voltaren",
+            "ibuprofen", "brufen", "advil",
+            "naproxen", "naprosyn", "naxdom",
+            "ketorolac", "toradol", "ketorol",
+            "mefenamic", "meftal", "ponstan",
+            "combiflam", "flexon",
+            "aceclofenac", "hifenac", "ace-proxyvon", "acefen",
+            "etoricoxib", "arcoxia", "nucoxia",
+            "celecoxib", "celebrex",
+            "piroxicam", "feldene",
+        ],
+        "ambiguous_freq_patterns": ["1 - 0 - 1", "1-0-1"],
+        "correct_freq": "Twice daily (Morning, Night)",
+        "is_topical": False,
+    },
+    {
+        # Topical products — must NEVER inherit oral meal instructions
+        "drug_class": "topical",
+        "match_keywords": [
+            "hexigel", "gum paint", "paint", "gel", "ointment",
+            "cream", "lotion", "drops", "spray",
+            "eye drop", "ear drop", "nasal spray",
+            "soliwax", "otosporin", "betadine", "savlon",
+            "clotrimazole", "candid", "canesten",
+            "mupirocin", "bactroban",
+        ],
+        "ambiguous_freq_patterns": [],
+        "correct_freq": None,
+        "is_topical": True,
+        "default_instructions": "Apply locally / as directed",
+        "default_duration": "1 week",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
 # MODULE-LEVEL SINGLETONS
 # ---------------------------------------------------------------------------
 db_service = LocalDrugDatabaseService()
@@ -325,30 +410,48 @@ def normalize_freq_token(tok: str) -> str:
 
 def expand_freq_token(raw_freq: str, drug_context: str = "") -> str:
     """
-    Expands frequency shorthand to clinical English with fallback rules
-    for faint strokes (e.g. Augmentin 1-0 -> Twice daily, Pan-D 0-0 -> Once daily).
+    Expands frequency shorthand to clinical English.
+
+    Unambiguous 3-digit patterns (Morning-Afternoon-Night) are resolved
+    directly from FREQ_MAP.
+    Ambiguous partial patterns (e.g. '1 - 0') are resolved against
+    DRUG_CLINICAL_OVERRIDES by drug class — NOT hardcoded brand names —
+    so new drugs only require a config entry, not code changes.
     """
+    # --- Unambiguous 3-digit frequency map (Morning - Afternoon - Night) ---
+    FREQ_MAP = {
+        "1 - 0 - 0": "Once daily (Morning)",
+        "0 - 0 - 1": "Once daily (Night)",
+        "0 - 1 - 0": "Once daily (Afternoon)",
+        "1 - 0 - 1": "Twice daily (Morning, Night)",
+        "1 - 0 - 2": "Twice daily (Morning, Night)",
+        "2 - 0 - 2": "Twice daily (Morning, Night)",
+        "1 - 1 - 0": "Twice daily (Morning, Afternoon)",
+        "0 - 1 - 1": "Twice daily (Afternoon, Night)",
+        "1 - 1 - 1": "Three times daily (Morning, Afternoon, Night)",
+        "1 - 1 - 2": "Three times daily (Morning, Afternoon, Night)",
+        "2 - 2 - 2": "Three times daily (Morning, Afternoon, Night)",
+        "0 - 0 - 0": "As directed",
+    }
+    if raw_freq in FREQ_MAP:
+        return FREQ_MAP[raw_freq]
+
+    # --- Ambiguous partial patterns: consult DRUG_CLINICAL_OVERRIDES by drug class ---
     drug_lower = drug_context.lower()
-    if raw_freq in ("1 - 0 - 1", "1 - 0 - 2"):
-        return "Twice daily (Morning, Night)"
-    elif raw_freq in ("1 - 0 - 0",):
+    for override in DRUG_CLINICAL_OVERRIDES:
+        if override.get("is_topical"):
+            continue
+        if raw_freq not in override["ambiguous_freq_patterns"]:
+            continue
+        if any(kw in drug_lower for kw in override["match_keywords"]):
+            return override["correct_freq"]
+
+    # --- Conservative generic defaults for still-unresolved patterns ---
+    if raw_freq in ("1 - 0", "1-0"):
+        return "Once daily (Morning)"   # safe default; Stage 2 will refine if needed
+    if raw_freq in ("0 - 0", "0-0"):
         return "Once daily (Morning)"
-    elif raw_freq in ("0 - 0 - 1",):
-        return "Once daily (Night)"
-    elif raw_freq in ("1 - 1 - 1",):
-        return "Three times daily (Morning, Afternoon, Night)"
-    elif raw_freq in ("1 - 1 - 0",):
-        return "Twice daily (Morning, Afternoon)"
-    elif raw_freq == "1 - 0":
-        # Clinical fallback: Oral antibiotics like Augmentin 625 are twice daily
-        if any(w in drug_lower for w in ("augmentin", "amox", "antibiotic", "clav")):
-            return "Twice daily (Morning, Night)"
-        return "Once daily (Morning)"
-    elif raw_freq == "0 - 0":
-        # Clinical fallback: PPI antacids like Pan-D are once daily before breakfast
-        if any(w in drug_lower for w in ("pan", "panto", "ppi", "antacid", "rab")):
-            return "Once daily (Morning)"
-        return "Once daily (Morning)"
+
     return raw_freq
 
 
@@ -594,37 +697,40 @@ Extract EVERY medication line visible above. Do NOT omit any drug, tablet, capsu
         summary.raw_ocr_text = raw_ocr_text
         summary.status = "PROCESSED"
 
-        # Deterministic clinical safety post-processing
+        # Deterministic clinical safety post-processing — config-driven via DRUG_CLINICAL_OVERRIDES.
+        # To support a new drug: add its keywords to the config table, no changes needed here.
         for med in summary.medications:
             dname = (med.drug_name or "").lower()
 
-            # Topical gel / gum paint separation
-            if any(top in dname for top in ("hexigel", "gum paint", "paint", "gel", "ointment")):
-                if med.instructions and any(m in med.instructions.lower() for m in ("before meal", "after meal")):
-                    med.instructions = "Apply locally / as directed"
+            # Topical check first — highest priority (safety: must never inherit oral instructions)
+            topical_override = next(
+                (ov for ov in DRUG_CLINICAL_OVERRIDES
+                 if ov.get("is_topical") and any(kw in dname for kw in ov["match_keywords"])),
+                None
+            )
+            if topical_override:
+                if med.instructions and any(
+                    m in med.instructions.lower() for m in ("before meal", "after meal")
+                ):
+                    med.instructions = topical_override["default_instructions"]
                 elif not med.instructions:
-                    med.instructions = "Apply locally / as directed"
-                if not med.duration or "week" in (med.duration or "").lower():
-                    med.duration = "1 week"
+                    med.instructions = topical_override["default_instructions"]
+                # Only set duration if not already present (avoid overwriting valid "2 weeks" etc.)
+                if not med.duration:
+                    med.duration = topical_override["default_duration"]
+                continue  # No frequency correction needed for topicals
 
-            # Clinical fallback: Augmentin 625 is twice daily
-            if "augmentin" in dname:
-                if not med.frequency or med.frequency.strip() in ("1 - 0", "1-0", "Once daily (Morning)"):
-                    med.frequency = "Twice daily (Morning, Night)"
-                elif "1 - 0 - 1" in (med.frequency or ""):
-                    med.frequency = "Twice daily (Morning, Night)"
-
-            # Clinical fallback: Pan-D is once daily morning before meals
-            if any(p in dname for p in ("pan-d", "pand", "pantoprazole")):
-                if not med.frequency or med.frequency.strip() in ("0 - 0", "0-0", "1 - 0", "1-0"):
-                    med.frequency = "Once daily (Morning)"
-                elif "1 - 0 - 0" in (med.frequency or ""):
-                    med.frequency = "Once daily (Morning)"
-
-            # Enzoflam is twice daily
-            if "enzoflam" in dname:
-                if not med.frequency or "1 - 0 - 1" in (med.frequency or ""):
-                    med.frequency = "Twice daily (Morning, Night)"
+            # Frequency correction for oral drugs — apply first matching drug class
+            freq_override = next(
+                (ov for ov in DRUG_CLINICAL_OVERRIDES
+                 if not ov.get("is_topical") and any(kw in dname for kw in ov["match_keywords"])),
+                None
+            )
+            if freq_override and freq_override.get("correct_freq"):
+                current_freq = (med.frequency or "").strip()
+                ambiguous = freq_override["ambiguous_freq_patterns"]
+                if not current_freq or any(p in current_freq for p in ambiguous):
+                    med.frequency = freq_override["correct_freq"]
 
         return summary
 
