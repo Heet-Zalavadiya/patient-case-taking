@@ -20,30 +20,79 @@ from google.genai import types
 class LabTestItem(BaseModel):
     test_name: str = Field(..., description="Name of the test, e.g., 'Hemoglobin', 'HbA1c'")
     observed_value: Optional[str] = Field(None, description="The measured value")
+    result_value: Optional[str] = Field(None, description="Measured result value matching DB schema")
     unit: Optional[str] = Field(None, description="Units of measurement (e.g., mg/dL, g/L)")
     reference_range: Optional[str] = Field(None, description="Normal or reference biological range")
     flag: Optional[str] = Field(None, description="NORMAL, HIGH, LOW, or ABNORMAL")
+    is_abnormal: int = Field(0, description="1 if abnormal/high/low else 0")
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.result_value:
+            self.result_value = self.observed_value
+        if self.flag and self.flag.upper() in ["HIGH", "LOW", "ABNORMAL"]:
+            self.is_abnormal = 1
+        elif self.is_abnormal is None:
+            self.is_abnormal = 0
 
 class LabReportSummary(BaseModel):
     patient_name: Optional[str] = Field(None)
     sample_date: Optional[str] = Field(None)
+    document_date: Optional[str] = Field(None)
     lab_name: Optional[str] = Field(None)
     tests: List[LabTestItem] = Field(default_factory=list)
     critical_alerts: List[str] = Field(default_factory=list, description="Values significantly outside biological range")
     raw_ocr_text: str = ""
     status: str = "PROCESSED"
 
+    def model_post_init(self, __context: Any) -> None:
+        if not self.document_date and self.sample_date:
+            self.document_date = self.sample_date
+
+class ExtractedConditionItem(BaseModel):
+    entity_type: str = Field(..., description="'diagnosis' or 'procedure_or_surgery'")
+    description: str = Field(..., description="Condition or procedure description")
+    entity_date: Optional[str] = Field(None, description="Date of condition or procedure (YYYY-MM-DD)")
+
 class DischargeSummary(BaseModel):
     patient_name: Optional[str] = Field(None)
     admission_date: Optional[str] = Field(None)
     discharge_date: Optional[str] = Field(None)
+    document_date: Optional[str] = Field(None)
     primary_diagnosis: Optional[str] = Field(None)
     secondary_diagnoses: List[str] = Field(default_factory=list)
     surgical_procedures: List[str] = Field(default_factory=list)
     discharge_vitals: List[str] = Field(default_factory=list)
     follow_up_instructions: Optional[str] = Field(None)
+    conditions: List[ExtractedConditionItem] = Field(default_factory=list)
     raw_ocr_text: str = ""
     status: str = "PROCESSED"
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.document_date:
+            self.document_date = self.discharge_date or self.admission_date
+        if not self.conditions:
+            conds = []
+            if self.primary_diagnosis:
+                conds.append(ExtractedConditionItem(
+                    entity_type="diagnosis",
+                    description=self.primary_diagnosis,
+                    entity_date=self.document_date
+                ))
+            for diag in self.secondary_diagnoses:
+                if diag:
+                    conds.append(ExtractedConditionItem(
+                        entity_type="diagnosis",
+                        description=diag,
+                        entity_date=self.document_date
+                    ))
+            for proc in self.surgical_procedures:
+                if proc:
+                    conds.append(ExtractedConditionItem(
+                        entity_type="procedure_or_surgery",
+                        description=proc,
+                        entity_date=self.admission_date or self.document_date
+                    ))
+            self.conditions = conds
 
 
 class DocumentClassification(BaseModel):
@@ -206,36 +255,163 @@ def process_medical_document(image_bytes: bytes, patient_metadata: dict = None) 
     try:
         ocr_text = run_azure_layout_extraction(image_bytes)
     except Exception as e:
-        return {"document_type": "ERROR", "data": None, "error": str(e)}
+        return {"document_type": "error", "data": None, "error": str(e)}
 
     if not ocr_text.strip():
-        return {"document_type": "ERROR", "data": None, "error": "No text detected."}
+        return {"document_type": "error", "data": None, "error": "No text detected."}
 
     # Classify the document
-    doc_type = classify_document(ocr_text)
+    raw_doc_type = classify_document(ocr_text)
+    doc_type = raw_doc_type.lower()
     print(f"[ROUTER] Document classified as: {doc_type}")
 
-    if doc_type == "PRESCRIPTION":
+    if doc_type == "prescription":
         # We can route it back to our specialized prescription pipeline,
         # which uses prebuilt-read and explicit spatial geometry.
         # This keeps the highly-tuned prescription logic intact.
         prescription_summary = process_hybrid_ocr(image_bytes, patient_metadata)
-        return {"document_type": "PRESCRIPTION", "data": prescription_summary.model_dump()}
+        return {"document_type": "prescription", "data": prescription_summary.model_dump()}
 
-    elif doc_type == "LAB_REPORT":
+    elif doc_type == "lab_report":
         lab_summary = parse_lab_report(ocr_text)
-        return {"document_type": "LAB_REPORT", "data": lab_summary.model_dump()}
+        return {"document_type": "lab_report", "data": lab_summary.model_dump()}
 
-    elif doc_type == "DISCHARGE_SUMMARY":
+    elif doc_type == "discharge_summary":
         discharge_summary = parse_discharge_summary(ocr_text)
-        return {"document_type": "DISCHARGE_SUMMARY", "data": discharge_summary.model_dump()}
+        return {"document_type": "discharge_summary", "data": discharge_summary.model_dump()}
 
     else:
         # Fallback to prescription if unknown, or just return raw text
         return {
-            "document_type": "UNKNOWN", 
+            "document_type": "unknown", 
             "data": {
                 "raw_ocr_text": ocr_text,
                 "message": "Document type not recognized."
             }
         }
+
+
+def extract_medical_document(image_bytes: bytes, patient_metadata: dict = None) -> dict:
+    """
+    Unified extraction entrypoint for medical documents.
+    Extracts text, classifies, and returns normalized dictionary ready for DB ingestion:
+    {
+        "document_type": "prescription" | "lab_report" | "discharge_summary" | "unknown",
+        "document_date": Optional[str],
+        "raw_ocr_text": str,
+        "status": "processed" | "failed",
+        "medications": [...],
+        "lab_values": [...],
+        "conditions": [...],
+        "raw_data": dict
+    }
+    """
+    try:
+        ocr_text = run_azure_layout_extraction(image_bytes)
+    except Exception as e:
+        return {
+            "document_type": "unknown",
+            "document_date": None,
+            "raw_ocr_text": "",
+            "status": "failed",
+            "medications": [],
+            "lab_values": [],
+            "conditions": [],
+            "error": str(e),
+            "raw_data": {}
+        }
+
+    if not ocr_text.strip():
+        return {
+            "document_type": "unknown",
+            "document_date": None,
+            "raw_ocr_text": "",
+            "status": "failed",
+            "medications": [],
+            "lab_values": [],
+            "conditions": [],
+            "error": "No text detected in document.",
+            "raw_data": {}
+        }
+
+    raw_doc_type = classify_document(ocr_text)
+    doc_type = raw_doc_type.lower()
+    print(f"[ROUTER] Document classified as: {doc_type}")
+
+    medications = []
+    lab_values = []
+    conditions = []
+    document_date = None
+    status = "processed"
+    raw_data = {}
+
+    if doc_type == "prescription":
+        prescription_summary = process_hybrid_ocr(image_bytes, patient_metadata)
+        raw_data = prescription_summary.model_dump()
+        document_date = prescription_summary.document_date or prescription_summary.date
+        status = "processed" if prescription_summary.status != "FAILED" else "failed"
+
+        for med in prescription_summary.medications:
+            medications.append({
+                "medicine_name": med.medicine_name or med.standardized_drug_name or med.drug_name,
+                "dosage": med.dosage,
+                "frequency": med.frequency,
+                "duration": med.duration,
+                "prescribed_date": med.prescribed_date or document_date
+            })
+
+        for diag in prescription_summary.diagnosis_or_symptoms:
+            if diag:
+                conditions.append({
+                    "entity_type": "diagnosis",
+                    "description": diag,
+                    "entity_date": document_date
+                })
+
+    elif doc_type == "lab_report":
+        lab_summary = parse_lab_report(ocr_text)
+        raw_data = lab_summary.model_dump()
+        document_date = lab_summary.document_date or lab_summary.sample_date
+        status = "processed" if "FAILED" not in lab_summary.status else "failed"
+
+        for t in lab_summary.tests:
+            lab_values.append({
+                "test_name": t.test_name,
+                "result_value": t.result_value or t.observed_value,
+                "unit": t.unit,
+                "reference_range": t.reference_range,
+                "is_abnormal": bool(t.is_abnormal)
+            })
+
+    elif doc_type == "discharge_summary":
+        discharge_summary = parse_discharge_summary(ocr_text)
+        raw_data = discharge_summary.model_dump()
+        document_date = (
+            discharge_summary.document_date
+            or discharge_summary.discharge_date
+            or discharge_summary.admission_date
+        )
+        status = "processed" if "FAILED" not in discharge_summary.status else "failed"
+
+        for cond in discharge_summary.conditions:
+            conditions.append({
+                "entity_type": cond.entity_type,
+                "description": cond.description,
+                "entity_date": cond.entity_date or document_date
+            })
+
+    else:
+        doc_type = "unknown"
+        status = "processed"
+        raw_data = {"raw_ocr_text": ocr_text}
+
+    return {
+        "document_type": doc_type,
+        "document_date": document_date,
+        "raw_ocr_text": ocr_text,
+        "status": status,
+        "medications": medications,
+        "lab_values": lab_values,
+        "conditions": conditions,
+        "raw_data": raw_data
+    }

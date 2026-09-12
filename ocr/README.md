@@ -2,21 +2,40 @@
 
 An enterprise-grade, privacy-first computer vision and clinical NLP pipeline engineered for **SIH 2026 (Ministry of Ayush)**.
 
-The service ingests raw camera snapshots or PDFs of medical documents—including **handwritten Indian prescriptions**, **diagnostic pathology lab reports**, and **hospital discharge summaries**—and converts them into verified, standardized clinical JSON schemas.
+The service ingests raw camera snapshots or PDFs of medical documents—including **handwritten Indian prescriptions**, **diagnostic pathology lab reports**, and **hospital discharge summaries**—and converts them into verified, standardized clinical data structured directly for SQL Server database storage.
 
 ---
 
-## Table of Contents
-- [Architecture & Core Capabilities](#architecture--core-capabilities)
-- [Multi-Stage Prescription Pipeline](#multi-stage-prescription-pipeline)
-- [Multi-Document Classification & Routing](#multi-document-classification--routing)
-- [Universal Input Adapter](#universal-input-adapter)
-- [Backend Integration Guide](#backend-integration-guide)
-  - [Option A: REST Microservice (HTTP)](#option-a-rest-microservice-http-recommended-for-distributed-services)
-  - [Option B: In-Process Python Import](#option-b-in-process-python-import-recommended-for-monolith--fastapi-mount)
-- [Environment Configuration](#environment-configuration)
-- [API Reference & Schema Contracts](#api-reference--schema-contracts)
-- [Verification & Running Tests](#verification--running-tests)
+## Deployment Modes
+
+### 🌟 Mode 1: Unified Single-Server Mode (Port 8000) — *Recommended*
+Run the entire MediKiosk platform—including all patient APIs, clinical session management, doctor authentication, and the OCR pipeline—under **one single FastAPI server**:
+
+```powershell
+cd "d:\Manya - Personal\Desktop\SIH Project\patient-case-taking\backend"
+uvicorn main:app --reload --port 8000
+```
+
+- **Swagger Docs**: `http://localhost:8000/docs`
+- **Document Upload**: `POST /documents` (multipart file upload + background OCR)
+- **Status Polling**: `GET /documents/{id}/status`
+- **Database Storage**: Extracted medications, lab values, and conditions are automatically written directly to your SQL Server database.
+
+---
+
+### 🧪 Mode 2: Standalone OCR Developer Server (Port 8001) — *Optional*
+If you or your team want to test or benchmark the OCR pipeline in isolation (without starting the database or backend services):
+
+```powershell
+cd "d:\Manya - Personal\Desktop\SIH Project\patient-case-taking\ocr"
+.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload
+```
+
+- **Swagger Docs**: `http://localhost:8001/docs`
+- **Health Check**: `GET /health`
+- **Prescriptions**: `POST /ocr/process-prescription`
+- **Multi-Document Router**: `POST /ocr/process-document`
+- **Unified DB-Ready JSON**: `POST /ocr/extract-unified`
 
 ---
 
@@ -63,7 +82,9 @@ Raw Image / PDF (Prescription, Lab Report, Discharge Summary)
             └─────────────┬─────────────┘
                           │
                           ▼
-               Structured Clinical JSON
+            ┌───────────────────────────┐
+            │ In-Process DB Writer      │ (Auto-populates SQL Server Tables)
+            └───────────────────────────┘
 ```
 
 ### Key Capabilities
@@ -78,222 +99,104 @@ Raw Image / PDF (Prescription, Lab Report, Discharge Summary)
 
 ---
 
-## Multi-Stage Prescription Pipeline
-
-- **Stage 1 — Azure Document Intelligence (`prebuilt-read`)**: Extracts high-precision polygon coordinates `[x1, y1, x2, y2, x3, y3, x4, y4]` preserving the exact 2D geometry of faint pen strokes without destructive binarization.
-- **Stage 1.5 — Deterministic Spatial Pairing (Python)**: Sorts line tokens left-to-right (`x`), associates dosage rows directly beneath the drug header, and propagates margin bracket instructions vertically (`y`).
-- **Stage 2 — Google Gemini (`gemini-3.6-flash`) Structuring**: Enforces strict Pydantic JSON schemas via native response schemas (`response_schema=ClinicalSummary`), backed by automatic exponential backoff retry loops for high resilience.
-- **Stage 3 — RapidFuzz Pharmaceutical Database Verification**: Queries `ocr/data/medicine.csv` and returns fuzzy match scores (`0.0` to `100.0%`), standardized brand names, and verification statuses (`VERIFIED_IN_DATABASE` or `UNREGISTERED`).
-- **Stage 4 — Local Regex Safety Net Fallback**: If network or API services are unreachable, an offline regex fallback extracts dosage patterns and flags the record for manual doctor review.
-
----
-
 ## Multi-Document Classification & Routing
 
 In addition to prescriptions, the engine supports **Pathology Lab Reports** and **Hospital Discharge Summaries** via `services.document_router`:
 
-1. **Auto-Triage**: Analyzes extracted document text and categorizes it into `PRESCRIPTION`, `LAB_REPORT`, or `DISCHARGE_SUMMARY`.
-2. **Pathology/Lab Reports (`LabReportSummary`)**: Utilizes Azure `prebuilt-layout` to extract diagnostic tables in Markdown format and structures test names, observed values, biological reference ranges, units, and critical alert flags.
-3. **Discharge Summaries (`DischargeSummary`)**: Extracts admission/discharge dates, primary and secondary diagnoses, surgical procedures, and discharge vitals.
+1. **Auto-Triage**: Analyzes extracted document text and categorizes it into `"prescription"`, `"lab_report"`, or `"discharge_summary"`.
+2. **Pathology/Lab Reports (`LabReportSummary`)**: Utilizes Azure `prebuilt-layout` to extract diagnostic tables in Markdown format and structures test names, observed values, biological reference ranges, units, and critical alert flags (`is_abnormal = 1` or `0`).
+3. **Discharge Summaries (`DischargeSummary`)**: Extracts admission/discharge dates, primary and secondary diagnoses, surgical procedures, and structured `conditions` (`diagnosis` or `procedure_or_surgery`).
 
 ---
 
-## Universal Input Adapter
+## Schema Alignment with SQL Database
 
-The pipeline includes a universal polymorphic input normalizer in [`services.hybrid_ocr`](file:///d:/Manya%20-%20Personal/Desktop/SIH%20Project/patient-case-taking/ocr/services/hybrid_ocr.py). Both `process_hybrid_ocr` and `process_prescription` accept:
-- **Raw `bytes`**: (e.g., `await file.read()` or `open("...", "rb").read()`)
-- **File path `str` or `Path`**: (e.g., `"samples/sample-prescription.png"` or `"/tmp/upload.pdf"`)
-- **FastAPI / Starlette `UploadFile`**: (e.g., directly from route parameter `file: UploadFile = File(...)`)
-- **File-like objects**: (e.g., `io.BytesIO`)
-- **Single- & Multi-Page PDFs**: (Natively detected via magic bytes `%PDF` and sent directly to Azure Document Intelligence)
+All OCR Pydantic models are 1:1 aligned with the SQL Server relational schema:
 
----
-
-## Backend Integration Guide
-
-The backend team has two flexible options to connect to this service.
-
-### Option A: REST Microservice (HTTP) *(Recommended for Distributed Services)*
-
-The OCR service runs as an independent FastAPI microservice on port **8001**.
-
-#### 1. Start the Microservice
-```powershell
-# From the ocr/ directory:
-.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload
-```
-
-#### 2. Backend FastAPI Controller Example (Forwarding UploadFile)
+### 1. Medications Table (`document_extracted_medications`)
 ```python
-# In your backend router (e.g. backend/routers/clinical.py)
-import httpx
-from fastapi import APIRouter, UploadFile, File, HTTPException
-
-router = APIRouter(prefix="/documents", tags=["Documents"])
-OCR_SERVICE_URL = "http://127.0.0.1:8001/ocr/process-hybrid"
-
-@router.post("/process-prescription")
-async def process_prescription_endpoint(file: UploadFile = File(...)):
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-
-    file_bytes = await file.read()
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post(
-                OCR_SERVICE_URL,
-                files={"file": (file.filename, file_bytes, file.content_type or "image/png")}
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as exc:
-            raise HTTPException(status_code=exc.response.status_code, detail=exc.response.text)
-        except Exception as err:
-            raise HTTPException(status_code=503, detail=f"OCR Microservice unavailable: {err}")
+class MedicationItem(BaseModel):
+    drug_name: str
+    medicine_name: Optional[str]        # -> DB column: medicine_name
+    dosage: Optional[str]               # -> DB column: dosage
+    frequency: Optional[str]            # -> DB column: frequency
+    duration: Optional[str]             # -> DB column: duration
+    prescribed_date: Optional[str]      # -> DB column: prescribed_date
+    instructions: Optional[str]
+    verification_score: float
+    standardized_drug_name: Optional[str]
+    verification_status: str
 ```
 
-#### 3. cURL Example
-```bash
-curl -X POST "http://127.0.0.1:8001/ocr/process-hybrid" \
-  -H "accept: application/json" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@samples/sample-prescription.png;type=image/png"
+### 2. Lab Values Table (`document_extracted_lab_values`)
+```python
+class LabTestItem(BaseModel):
+    test_name: str                      # -> DB column: test_name
+    result_value: Optional[str]         # -> DB column: result_value (mapped from observed_value)
+    unit: Optional[str]                 # -> DB column: unit
+    reference_range: Optional[str]      # -> DB column: reference_range
+    is_abnormal: int                    # -> DB column: is_abnormal (1 if HIGH/LOW/ABNORMAL, else 0)
+```
+
+### 3. Conditions Table (`document_extracted_conditions`)
+```python
+class ExtractedConditionItem(BaseModel):
+    entity_type: str                    # -> DB column: entity_type ('diagnosis' | 'procedure_or_surgery')
+    description: str                    # -> DB column: description
+    entity_date: Optional[str]          # -> DB column: entity_date
 ```
 
 ---
 
-### Option B: In-Process Python Import *(Recommended for Monolith / FastAPI Mount)*
+## In-Process Python Usage
 
-If running the backend in the same Python environment, import the universal adapter directly with zero HTTP overhead.
+To call the extraction engine directly from Python code (zero HTTP overhead):
 
-#### Import from `services.ocr` or `services.hybrid_ocr`:
 ```python
-from services.ocr import process_prescription, ClinicalSummary
+from services.document_router import extract_medical_document
 
-# 1. From an image or PDF file path on disk:
-summary: ClinicalSummary = process_prescription("uploads/patient_123_rx.png")
+# Pass image/PDF bytes or file path
+with open("sample_rx.png", "rb") as f:
+    result = extract_medical_document(f.read())
 
-# 2. Or from raw bytes:
-summary: ClinicalSummary = process_prescription(file_bytes)
-
-# 3. Or passing patient context for client-side PII de-anonymization:
-summary: ClinicalSummary = process_prescription(
-    file_bytes,
-    patient_metadata={"name": "Sachin Sansare"}
-)
-
-# Access typed Pydantic attributes or export dictionary:
-print(summary.patient_name)
-for med in summary.medications:
-    print(med.drug_name, med.frequency, med.instructions, med.standardized_drug_name)
-
-result_dict = summary.model_dump()
-```
-
-#### For Multi-Document Routing (Prescriptions + Lab Reports + Discharge Summaries):
-```python
-from services.ocr import process_medical_document
-
-# Automatically triages document type and routes to the appropriate parser
-doc_result = process_medical_document(file_bytes, patient_metadata={"name": "Sachin Sansare"})
-
-print(doc_result["document_type"])  # "PRESCRIPTION", "LAB_REPORT", or "DISCHARGE_SUMMARY"
-print(doc_result["data"])
+print(result["document_type"])  # "prescription" | "lab_report" | "discharge_summary"
+print(result["document_date"])  # "2026-03-15"
+print(result["medications"])    # List of medication dicts matching DB columns
+print(result["lab_values"])     # List of lab test dicts matching DB columns
+print(result["conditions"])     # List of clinical conditions
 ```
 
 ---
 
 ## Environment Configuration
 
-Ensure credentials are configured in your `.env` file (located in `ocr/.env` or repository root):
+Ensure credentials are configured in your `.env` file (in `ocr/.env`, `backend/.env`, or the root directory):
 
 ```env
-# Azure Document Intelligence (Computer Vision)
+# Azure Document Intelligence
 AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT="https://<your-resource-name>.cognitiveservices.azure.com/"
 AZURE_DOCUMENT_INTELLIGENCE_KEY="<your-azure-key>"
 
-# Google AI Studio (Clinical NLP Structuring)
-GEMINI_API_KEY="<your-google-ai-studio-gemini-key>"
-```
+# Google AI Studio (Clinical LLM)
+GEMINI_API_KEY="<your-gemini-api-key>"
 
----
-
-## API Reference & Schema Contracts
-
-### Output Schema: `ClinicalSummary`
-```json
-{
-  "patient_name": "Mr. Sachin Sansare",
-  "doctor_name": null,
-  "date": "12/10/22",
-  "diagnosis_or_symptoms": [],
-  "medications": [
-    {
-      "drug_name": "Tab. Augmentin 625mg",
-      "dosage": "625mg",
-      "frequency": "Twice daily (Morning, Night)",
-      "duration": "5 days",
-      "instructions": "after meals",
-      "original_regional_instruction": null,
-      "verification_score": 100.0,
-      "standardized_drug_name": "Augmentin 625mg",
-      "verification_status": "VERIFIED_IN_DATABASE"
-    },
-    {
-      "drug_name": "Tab. Enzoflam",
-      "dosage": null,
-      "frequency": "Twice daily (Morning, Night)",
-      "duration": "5 days",
-      "instructions": "after meals",
-      "original_regional_instruction": null,
-      "verification_score": 100.0,
-      "standardized_drug_name": "Enzoflam",
-      "verification_status": "VERIFIED_IN_DATABASE"
-    },
-    {
-      "drug_name": "Tab. PanD 40mg",
-      "dosage": "40mg",
-      "frequency": "Once daily (Morning)",
-      "duration": "5 days",
-      "instructions": "before meals",
-      "original_regional_instruction": null,
-      "verification_score": 94.74,
-      "standardized_drug_name": "Pan-D 40mg",
-      "verification_status": "VERIFIED_IN_DATABASE"
-    },
-    {
-      "drug_name": "Hexigel gum paint",
-      "dosage": null,
-      "frequency": "Twice daily (Morning, Night)",
-      "duration": "1 week",
-      "instructions": "Apply locally / as directed",
-      "original_regional_instruction": null,
-      "verification_score": 100.0,
-      "standardized_drug_name": "Hexigel",
-      "verification_status": "VERIFIED_IN_DATABASE"
-    }
-  ],
-  "lab_tests_recommended": [],
-  "red_flags": [],
-  "ocr_confidence_score": 99.0,
-  "status": "PROCESSED"
-}
+# SQL Server Database (Backend)
+DATABASE_SERVER="localhost\\SQLEXPRESS"
+DATABASE_NAME="medikiosk"
 ```
 
 ---
 
 ## Verification & Running Tests
 
-Run the test suites from within the `ocr/` folder:
-
+### 1. Test Single-Server Backend & OCR Integration
 ```powershell
-# 1. Run Universal Adapter & FastAPI Endpoint integration test:
-.\.venv\Scripts\python.exe -u test_adapter.py
+cd "d:\Manya - Personal\Desktop\SIH Project\patient-case-taking\backend"
+..\ocr\.venv\Scripts\python.exe test_single_server_ocr.py
+```
 
-# 2. Run Multi-Document Auto-Router test:
-.\.venv\Scripts\python.exe -u test_multi_doc.py samples/sample-prescription.png
-
-# 3. Run Standalone Prescription pipeline test:
-.\.venv\Scripts\python.exe -u test_ocr.py
+### 2. Test Standalone OCR Microservice Pipeline
+```powershell
+cd "d:\Manya - Personal\Desktop\SIH Project\patient-case-taking\ocr"
+.\.venv\Scripts\python.exe test_multi_doc.py samples/sample-prescription.png
 ```

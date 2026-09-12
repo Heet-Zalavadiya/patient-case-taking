@@ -22,6 +22,7 @@ from services.hybrid_ocr import (
 )
 from services.document_router import (
     process_medical_document,
+    extract_medical_document,
     LabReportSummary,
     DischargeSummary,
 )
@@ -31,6 +32,7 @@ __all__ = [
     "process_prescription",
     "process_hybrid_ocr",
     "process_medical_document",
+    "extract_medical_document",
     # Pydantic schemas
     "ClinicalSummary",
     "MedicationItem",

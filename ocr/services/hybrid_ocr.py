@@ -161,12 +161,19 @@ class MedicationItem(BaseModel):
     verification_score: float = Field(0.0)
     standardized_drug_name: Optional[str] = Field(None)
     verification_status: str = Field("UNVERIFIED")
+    medicine_name: Optional[str] = Field(None, description="Standardized or extracted medicine name matching DB schema")
+    prescribed_date: Optional[str] = Field(None, description="Date medicine was prescribed (YYYY-MM-DD)")
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.medicine_name:
+            self.medicine_name = self.standardized_drug_name or self.drug_name
 
 
 class ClinicalSummary(BaseModel):
     patient_name: Optional[str] = Field(None, validation_alias=AliasChoices('patient_name', 'patient'))
     doctor_name: Optional[str] = Field(None, validation_alias=AliasChoices('doctor_name', 'doctor'))
     date: Optional[str] = Field(None, validation_alias=AliasChoices('date', 'prescription_date'))
+    document_date: Optional[str] = Field(None, description="Normalized document date (YYYY-MM-DD) matching DB schema")
     diagnosis_or_symptoms: List[str] = Field(default_factory=list)
     medications: List[MedicationItem] = Field(default_factory=list)
     lab_tests_recommended: List[str] = Field(default_factory=list)
@@ -174,6 +181,10 @@ class ClinicalSummary(BaseModel):
     ocr_confidence_score: float = 0.0
     raw_ocr_text: str = ""
     status: str = "PROCESSED"
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.document_date and self.date:
+            self.document_date = self.date
 
 
 # ---------------------------------------------------------------------------
@@ -750,6 +761,11 @@ def verify_medications_database(summary: ClinicalSummary) -> ClinicalSummary:
             med.verification_score = match_res.get("confidence", 0.0)
             med.standardized_drug_name = match_res.get("matched_brand", med.drug_name)
             med.verification_status = match_res.get("status", "UNVERIFIED")
+        med.medicine_name = med.standardized_drug_name or med.drug_name
+        if not med.prescribed_date and summary.date:
+            med.prescribed_date = summary.date
+    if not summary.document_date and summary.date:
+        summary.document_date = summary.date
     return summary
 
 
