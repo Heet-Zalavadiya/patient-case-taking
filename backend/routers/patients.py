@@ -4,8 +4,6 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import Session, joinedload
-
 from database.connection import get_db
 from models.clinical_session import ClinicalSession
 from models.clinical_summary import ClinicalSummary
@@ -17,7 +15,6 @@ from models.document_extraction import (
 )
 from models.medical_document import MedicalDocument
 from models.patient import Patient
-from models.clinical_session import ClinicalSession
 from models.structured_history import StructuredHistory
 from schemas.clinical import (
     ClinicalSummaryResponse,
@@ -26,9 +23,7 @@ from schemas.clinical import (
     SessionResponse,
     StructuredHistoryResponse,
 )
-from schemas.patient import PatientCreate, PatientResponse
-from schemas.clinical import SessionResponse, StructuredHistoryResponse
-import hashlib
+from schemas.patient import ConsentCreate, ConsentResponse, PatientCreate, PatientResponse
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
