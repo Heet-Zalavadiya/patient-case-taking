@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from database.connection import Base, engine
 import models   # this imports all models so Base knows about them
 
-# This creates all tables in SQL Server if they don't exist yet
+# Create all tables in SQL Server if they don't exist yet
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -11,10 +12,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+# Global Exception Handler for API Stability
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal Server Error",
+            "message": str(exc),
+            "path": request.url.path
+        }
+    )
+
+
 # ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "ok", "project": "MediKiosk", "team": "SIH26047"}
+
 
 # ── Include routers ───────────────────────────────────────────────────────────
 from routers.patients import router as patients_router
