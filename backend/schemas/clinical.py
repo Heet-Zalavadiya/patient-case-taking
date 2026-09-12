@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -22,6 +23,11 @@ class SessionResponse(ORMModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     session_data_cleared: bool
+
+
+class SessionUpdate(BaseModel):
+    status: Optional[Literal["in_progress", "completed", "abandoned"]] = None
+    session_data_cleared: Optional[bool] = None
 
 
 class InterviewTurnCreate(BaseModel):
@@ -115,3 +121,95 @@ class MedicalDocumentCreate(BaseModel):
 class MedicalDocumentResponse(MedicalDocumentCreate, ORMModel):
     document_id: int
     uploaded_at: Optional[datetime] = None
+    extracted_medications: Optional[List[str]] = None
+
+
+# ── Day 3 Schemas ─────────────────────────────────────────────────────────────
+
+class ClinicalSummaryCreate(BaseModel):
+    patient_id: int
+    summary_text_english: str
+    summary_text_local_language: Optional[str] = None
+    status: Literal["draft", "accepted", "amended", "rejected"] = "draft"
+
+
+class ClinicalSummaryResponse(ClinicalSummaryCreate, ORMModel):
+    summary_id: int
+    session_id: int
+    reviewed_by_doctor_id: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
+    generated_at: Optional[datetime] = None
+
+
+class SummaryStatusUpdate(BaseModel):
+    status: Literal["draft", "accepted", "amended", "rejected"]
+    summary_text_english: Optional[str] = None
+    summary_text_local_language: Optional[str] = None
+
+
+class AbdmSyncLogCreate(BaseModel):
+    target_system: Literal["HIS", "ABDM_FHIR"] = "ABDM_FHIR"
+    sync_status: Literal["success", "failed", "pending"] = "success"
+    fhir_resource_id: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class AbdmSyncLogResponse(AbdmSyncLogCreate, ORMModel):
+    sync_id: int
+    summary_id: int
+    synced_at: Optional[datetime] = None
+
+
+class AuditLogCreate(BaseModel):
+    patient_id: Optional[int] = None
+    doctor_id: Optional[int] = None
+    action: str
+    action_details: Optional[str] = None
+
+
+class AuditLogResponse(AuditLogCreate, ORMModel):
+    log_id: int
+    occurred_at: Optional[datetime] = None
+
+
+class ExtractedMedicationCreate(BaseModel):
+    medicine_name: str
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    prescribed_date: Optional[date] = None
+    duration: Optional[str] = None
+
+
+class ExtractedMedicationResponse(ExtractedMedicationCreate, ORMModel):
+    medication_id: int
+    document_id: int
+
+
+class ExtractedLabValueCreate(BaseModel):
+    test_name: str
+    result_value: Optional[str] = None
+    unit: Optional[str] = None
+    reference_range: Optional[str] = None
+    is_abnormal: bool = False
+
+
+class ExtractedLabValueResponse(ExtractedLabValueCreate, ORMModel):
+    lab_value_id: int
+    document_id: int
+
+
+class ExtractedConditionCreate(BaseModel):
+    entity_type: str  # diagnosis, procedure_or_surgery
+    description: str
+    entity_date: Optional[date] = None
+
+
+class ExtractedConditionResponse(ExtractedConditionCreate, ORMModel):
+    condition_id: int
+    document_id: int
+
+
+class MedicalDocumentDetailResponse(MedicalDocumentResponse):
+    medications: List[ExtractedMedicationResponse] = []
+    lab_values: List[ExtractedLabValueResponse] = []
+    conditions: List[ExtractedConditionResponse] = []

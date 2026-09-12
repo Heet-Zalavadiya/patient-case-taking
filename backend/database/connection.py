@@ -15,23 +15,42 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# ── Connection string ─────────────────────────────────────────────────────────
-# Option A — SQL Server Authentication (username + password in .env)
-if settings.DATABASE_USERNAME:
-    DATABASE_URL = (
-        f"mssql+pyodbc://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}"
-        f"@{settings.DATABASE_SERVER}/{settings.DATABASE_NAME}"
-        f"?driver=ODBC+Driver+17+for+SQL+Server"
-    )
-else:
-    # Option B — Windows Authentication (trusted connection, no username needed)
-    DATABASE_URL = (
-        f"mssql+pyodbc://@{settings.DATABASE_SERVER}/{settings.DATABASE_NAME}"
-        f"?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
-    )
+# ── Connection string & Engine Initialization ─────────────────────────────
+explicit_url = os.getenv("DATABASE_URL")
 
-# ── Engine & Session ──────────────────────────────────────────────────────────
-engine = create_engine(DATABASE_URL, echo=True)   # echo=True prints SQL to console — helpful for debugging
+def build_engine():
+    if explicit_url:
+        connect_args = {"check_same_thread": False} if explicit_url.startswith("sqlite") else {}
+        return create_engine(explicit_url, echo=False, connect_args=connect_args)
+
+    # Attempt SQL Server
+    if settings.DATABASE_USERNAME:
+        sql_server_url = (
+            f"mssql+pyodbc://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}"
+            f"@{settings.DATABASE_SERVER}/{settings.DATABASE_NAME}"
+            f"?driver=ODBC+Driver+17+for+SQL+Server"
+        )
+    else:
+        sql_server_url = (
+            f"mssql+pyodbc://@{settings.DATABASE_SERVER}/{settings.DATABASE_NAME}"
+            f"?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+        )
+
+    try:
+        eng = create_engine(sql_server_url, echo=False)
+        with eng.connect() as conn:
+            pass
+        return eng
+    except Exception as e:
+        # Fallback to local SQLite for seamless development & offline evaluation
+        import logging
+        logging.getLogger("uvicorn").warning(
+            f"SQL Server unavailable ({e}). Falling back to SQLite database at ./medikiosk.db"
+        )
+        return create_engine("sqlite:///./medikiosk.db", echo=False, connect_args={"check_same_thread": False})
+
+engine = build_engine()
+DATABASE_URL = str(engine.url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

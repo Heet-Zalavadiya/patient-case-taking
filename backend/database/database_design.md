@@ -52,5 +52,4 @@ doctors ──< red_flag_alerts (acknowledged_by_doctor_id)
 backend/
 └── database/
     ├── medikiosk_schema.sql
-    └── database_design.md   (this file)
 ```
