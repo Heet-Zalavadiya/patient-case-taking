@@ -150,321 +150,70 @@ export const LanguageSelect = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
+    <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center">
       
-      {/* 1. SCREEN HEADER */}
-      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
-        <div
-          className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 border ${
-            isLight
-              ? 'bg-cyan-50 border-cyan-300 text-cyan-800'
-              : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
-          }`}
-        >
-          <Languages className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500 shrink-0" />
-          <span>Multilingual Touch Terminal • बहुभाषी टच टर्मिनल</span>
+      {/* SINGLE CENTRED GLASS CARD */}
+      <div
+        className={`w-full rounded-2xl p-5 sm:p-6 text-center transition-all duration-300 border-2 backdrop-blur-xl shadow-2xl ${
+          isLight
+            ? 'bg-white/95 border-slate-200 shadow-slate-300/40 text-slate-900'
+            : 'bg-slate-900/90 border-slate-700 shadow-slate-950/60 text-white'
+        }`}
+      >
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center mx-auto mb-2 shadow-md shadow-cyan-500/25">
+          <Languages className="w-6 h-6 text-slate-950 stroke-[2.5]" />
         </div>
-        <h2 className={`text-xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-          Please Select Your Preferred Language
+
+        <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          Select Language / भाषा चुनें
         </h2>
-        <p className="text-lg sm:text-2xl font-bold text-cyan-500 mt-0.5">
-          कृपया अपनी भाषा चुनें
+        <p className={`text-xs sm:text-sm mt-0.5 mb-4 font-bold ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+          Tap your preferred language to begin intake
         </p>
-        <p className={`text-xs sm:text-sm mt-1 max-w-xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-          Your entire medical intake and audio guidance will adapt to your choice.
-        </p>
-      </div>
 
-      {/* 2. KIOSK LANGUAGE GRID (6 Large Touchable Cards) */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 mb-5 sm:mb-6">
-        {languages.map((lang) => {
-          const isSelected = patientData.preferred_language === lang.id;
-          const isPlaying = playingLang === lang.id;
-
-          return (
-            <div
-              key={lang.id}
-              onClick={() => handleSelectLanguage(lang.id)}
-              className={`group relative cursor-pointer rounded-3xl p-3.5 sm:p-5 transition-all duration-200 transform flex flex-col justify-between min-h-[140px] sm:min-h-[175px] border select-none ${
-                isSelected
-                  ? isLight
-                    ? 'bg-emerald-50/95 border-2 border-emerald-500 shadow-xl shadow-emerald-100/50 scale-[1.02] ring-4 ring-emerald-500/20 text-slate-900'
-                    : 'bg-slate-800/95 border-2 border-emerald-400 shadow-2xl shadow-emerald-500/25 scale-[1.02] ring-4 ring-emerald-500/20 text-white'
-                  : isLight
-                  ? 'bg-white/95 hover:bg-slate-50 border-slate-200/90 shadow-md text-slate-900'
-                  : 'bg-slate-900/80 hover:bg-slate-800/80 border-slate-800 hover:border-slate-700 shadow-lg text-white'
-              }`}
-            >
-              {/* Selected Floating Checkmark */}
-              {isSelected && (
-                <div className="absolute top-3.5 right-3.5 bg-emerald-500 text-white p-1 rounded-full shadow-md animate-in fade-in">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                </div>
-              )}
-
-              {/* Card Body */}
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xl sm:text-2xl font-black transition-colors ${
-                      isSelected
-                        ? isLight
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : isLight
-                        ? 'bg-slate-100 border border-slate-200 text-slate-700 group-hover:text-cyan-700'
-                        : 'bg-slate-950 border border-slate-800 text-slate-300 group-hover:text-cyan-300'
-                    }`}
-                  >
-                    {lang.symbol}
-                  </div>
-                  <div>
-                    <h3 className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      {lang.nativeName}
-                    </h3>
-                    <span className={`text-xs sm:text-sm font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {lang.englishName}
-                    </span>
-                  </div>
-                </div>
-
-                <p className={`text-[11px] sm:text-xs line-clamp-1 mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  {lang.subGreeting}
-                </p>
-              </div>
-
-              {/* Speaker TTS Trigger Button */}
-              <div className={`mt-3 pt-2.5 border-t flex items-center justify-between ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
-                <button
-                  type="button"
-                  onClick={(e) => handlePlayTTS(e, lang)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    isPlaying
-                      ? 'bg-emerald-500 text-white animate-pulse shadow-md'
-                      : isSelected
-                      ? isLight
-                        ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
-                        : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                      : isLight
-                      ? 'bg-slate-100 hover:bg-slate-200 text-cyan-800 border border-slate-200'
-                      : 'bg-slate-950 hover:bg-slate-800 text-cyan-300 border border-slate-800'
-                  }`}
-                  title="Play audio greeting"
-                >
-                  <Volume2 className={`w-4 h-4 ${isPlaying ? 'animate-bounce' : ''}`} />
-                  <span>{isPlaying ? 'Playing...' : 'Audio (ऑडियो)'}</span>
-                </button>
-
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {isSelected ? 'Selected ✓' : 'Tap to Pick'}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 3. CLINICAL PATHWAY SELECTOR (AYUSH vs Allopathic) */}
-      <div
-        className={`backdrop-blur-xl border rounded-3xl p-4 sm:p-5 mb-5 shadow-xl transition-colors duration-300 ${
-          isLight
-            ? 'bg-white/90 border-slate-200/90 shadow-slate-300/30 text-slate-900'
-            : 'bg-slate-900/90 border-slate-800 shadow-slate-950/30 text-white'
-        }`}
-      >
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Stethoscope className="w-5 h-5 text-emerald-500" />
-            <span className={`text-sm font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-              Clinical Consultation Pathway / क्लिनिकल परामर्श का प्रकार
-            </span>
-          </div>
-          <span className={`text-xs font-semibold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
-            Dual AYUSH & Modern Triage
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          
-          {/* Option 1: Allopathic */}
-          <button
-            type="button"
-            onClick={() => setHistoryMode('allopathic')}
-            className={`p-4 rounded-2xl text-left transition-all border-2 flex items-center justify-between cursor-pointer select-none active:scale-98 ${
-              patientData.history_mode === 'allopathic'
-                ? isLight
-                  ? 'bg-cyan-50/90 border-cyan-500 shadow-md ring-2 ring-cyan-400/20 text-cyan-950'
-                  : 'bg-cyan-500/20 border-cyan-400 shadow-lg shadow-cyan-500/10 ring-2 ring-cyan-500/20 text-white'
-                : isLight
-                ? 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
-                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 text-slate-300'
-            }`}
-          >
-            <div className="flex items-center gap-3.5">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                  patientData.history_mode === 'allopathic'
-                    ? isLight ? 'bg-cyan-500 text-white border-cyan-600' : 'bg-cyan-400 text-slate-950 border-cyan-300'
-                    : isLight ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
-                }`}
-              >
-                <Stethoscope className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="font-bold text-sm sm:text-base">
-                  Allopathic Medicine (आधुनिक चिकित्सा)
-                </div>
-                <div className={`text-xs mt-0.5 ${patientData.history_mode === 'allopathic' ? (isLight ? 'text-cyan-800' : 'text-cyan-300') : (isLight ? 'text-slate-500' : 'text-slate-400')}`}>
-                  General Medicine, Acute Symptoms, Modern Triage
-                </div>
-              </div>
-            </div>
-            {patientData.history_mode === 'allopathic' && (
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isLight ? 'bg-cyan-600 text-white' : 'bg-cyan-400 text-slate-950'}`}>
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-            )}
-          </button>
-
-          {/* Option 2: Ayush & Kayachikitsa */}
-          <button
-            type="button"
-            onClick={() => setHistoryMode('ayush')}
-            className={`p-4 rounded-2xl text-left transition-all border-2 flex items-center justify-between cursor-pointer select-none active:scale-98 ${
-              patientData.history_mode === 'ayush'
-                ? isLight
-                  ? 'bg-emerald-50/90 border-emerald-500 shadow-md ring-2 ring-emerald-400/20 text-emerald-950'
-                  : 'bg-emerald-500/20 border-emerald-400 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/20 text-white'
-                : isLight
-                ? 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
-                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 text-slate-300'
-            }`}
-          >
-            <div className="flex items-center gap-3.5">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
-                  patientData.history_mode === 'ayush'
-                    ? isLight ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-emerald-400 text-slate-950 border-emerald-300'
-                    : isLight ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
-                }`}
-              >
-                <Flame className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <div className="font-bold text-sm sm:text-base">
-                  Ayush & Kayachikitsa (आयुष एवं कायचिकित्सा)
-                </div>
-                <div className={`text-xs mt-0.5 ${patientData.history_mode === 'ayush' ? (isLight ? 'text-emerald-800' : 'text-emerald-300') : (isLight ? 'text-slate-500' : 'text-slate-400')}`}>
-                  Prakriti Assessment, Agni Pariksha, Holistic Care
-                </div>
-              </div>
-            </div>
-            {patientData.history_mode === 'ayush' && (
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isLight ? 'bg-emerald-600 text-white' : 'bg-emerald-400 text-slate-950'}`}>
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-            )}
-          </button>
-
-        </div>
-      </div>
-
-      {/* 4. ACCESSIBILITY MODE TOGGLE (Bottom Bar) */}
-      <div
-        className={`backdrop-blur-xl border rounded-3xl p-4 sm:p-5 mb-6 shadow-xl transition-colors duration-300 ${
-          isLight
-            ? 'bg-white/90 border-slate-200/90 shadow-slate-300/30 text-slate-900'
-            : 'bg-slate-900/90 border-slate-800 shadow-slate-950/30 text-white'
-        }`}
-      >
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Accessibility className="w-5 h-5 text-teal-500" />
-            <span className={`text-sm font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-              Accessibility Mode / सुगमता मोड
-            </span>
-          </div>
-          <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-            Touch to adapt contrast & voice guidance
-          </span>
-        </div>
-
-        {/* 3 Large Touch Pills */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {accessibilityModes.map((mode) => {
-            const Icon = mode.icon;
-            const isCurrent = patientData.accessibility_mode === mode.id;
-
+        {/* 6 Square Form Language Tiles Grid */}
+        <div className="grid grid-cols-3 gap-2.5 mb-4">
+          {languages.map((lang) => {
+            const isSelected = patientData.preferred_language === lang.id;
             return (
               <button
-                key={mode.id}
+                key={lang.id}
                 type="button"
-                onClick={() => setAccessibilityMode(mode.id)}
-                className={`p-3.5 sm:p-4 rounded-2xl text-left transition-all border flex flex-col justify-between cursor-pointer select-none active:scale-98 ${
-                  isCurrent
-                    ? isLight
-                      ? `${mode.activeColorLight} border-2 shadow-md`
-                      : `${mode.activeColorDark} border-2 shadow-lg ring-2 ring-white/10`
+                onClick={() => handleSelectLanguage(lang.id)}
+                className={`p-3 rounded-xl border-2 text-left flex flex-col justify-between transition-all transform active:scale-95 cursor-pointer aspect-square ${
+                  isSelected
+                    ? 'bg-gradient-to-br from-teal-400 to-cyan-500 text-slate-950 font-black border-teal-300 shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-400/40'
                     : isLight
-                    ? 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800'
-                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 text-slate-300'
+                    ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-900 font-bold'
+                    : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white font-bold'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-5 h-5 ${isCurrent ? (isLight ? 'text-slate-900' : 'text-white') : isLight ? 'text-slate-500' : 'text-slate-400'}`} />
-                    <span className={`font-bold text-xs sm:text-sm ${isCurrent && isLight ? 'text-slate-900' : isCurrent ? 'text-white' : isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-                      {mode.title}
-                    </span>
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-2xl sm:text-3xl font-black">{lang.symbol}</span>
+                  {isSelected && <Check className="w-5 h-5 stroke-[3] text-slate-950" />}
+                </div>
+                <div>
+                  <div className="text-base sm:text-lg font-black leading-tight">{lang.nativeName}</div>
+                  <div className={`text-xs font-bold ${isSelected ? 'text-slate-900' : isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {lang.englishName}
                   </div>
-                  {isCurrent && (
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isLight ? 'bg-emerald-600 text-white' : 'bg-white text-slate-950'}`}>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    </div>
-                  )}
-                </div>
-
-                <div className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  {mode.hindiTitle}
-                </div>
-                <div className={`text-[11px] mt-1 leading-tight ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {mode.desc}
                 </div>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* 4. NAVIGATION BAR */}
-      <div className="w-full flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
-        
-        {/* Back Button */}
-        <button
-          type="button"
-          onClick={prevStep}
-          className={`w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-8 rounded-2xl border font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition active:scale-98 cursor-pointer shadow-md ${
-            isLight
-              ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-slate-200/50'
-              : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
-          }`}
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-          <span>Back / पीछे जाएँ</span>
-        </button>
-
-        {/* Confirm Language CTA */}
+        {/* Single Primary Action Button */}
         <button
           type="button"
           onClick={nextStep}
-          className="w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-10 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base sm:text-xl flex items-center justify-center gap-2.5 sm:gap-3 shadow-xl shadow-emerald-500/25 transition-all active:scale-98 cursor-pointer"
+          className="w-full h-14 rounded-xl bg-gradient-to-r from-teal-400 via-cyan-500 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl shadow-cyan-500/25 transition-all active:scale-98 cursor-pointer"
         >
-          <span>Confirm Language / भाषा की पुष्टि करें</span>
-          <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
+          <span>Confirm & Continue / आगे बढ़ें</span>
+          <ArrowRight className="w-5 h-5 stroke-[3]" />
         </button>
 
       </div>
-
     </div>
   );
 };

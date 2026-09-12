@@ -166,9 +166,9 @@ export const PatientHome = () => {
                 Official OPD Token Number
               </span>
               <div
-                className={`text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${
+                className={`text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${
                   isLight ? 'from-emerald-600 via-teal-600 to-cyan-700' : 'from-emerald-400 via-teal-300 to-cyan-400'
-                } tracking-tight my-1`}
+                } tracking-tight my-1 font-mono whitespace-nowrap`}
               >
                 {tokenNumber}
               </div>

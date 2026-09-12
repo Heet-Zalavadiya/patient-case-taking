@@ -586,112 +586,82 @@ export const AiInterview = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-1 sm:px-4 flex flex-col">
+    <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center">
       
-      {/* 1. TOP HEADER & TRIAGE MODE SWITCHER */}
-      <div className="mt-1 sm:mt-2 mb-3 sm:mb-4 text-center">
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-          
-          <div
-            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border ${
-              isLight
-                ? 'bg-cyan-50 border-cyan-300 text-cyan-800 shadow-sm'
-                : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500 animate-pulse" />
-            <span className="truncate max-w-[280px] sm:max-w-none">AI Clinical Interview (SOCRATES Framework)</span>
-          </div>
-
-          {/* Clean, Non-Intrusive Notification Badge */}
-          {toastNotification && (
+      {/* 1. TOP HEADER & TRIAGE MODE SWITCHER (WITH HIGH CONTRAST GLASS BACKDROP) */}
+      <div className="mb-3 text-center">
+        <div className={`inline-block px-6 py-3 rounded-2xl border-2 shadow-xl transition-all ${
+          isLight
+            ? 'bg-white border-cyan-400 shadow-slate-500/20 text-slate-950'
+            : 'bg-slate-900 border-cyan-500 shadow-slate-950/70 text-white'
+        }`}>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
             <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border animate-in fade-in slide-in-from-top-2 duration-200 shadow-sm ${
-                toastNotification.type === 'summary'
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : isLight
-                  ? 'bg-sky-50 border-sky-300 text-sky-800'
-                  : 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border ${
+                isLight
+                  ? 'bg-cyan-100 border-cyan-300 text-cyan-950 shadow-xs'
+                  : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
               }`}
             >
-              {toastNotification.type === 'summary' ? (
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
-              ) : (
-                <Database className="w-3.5 h-3.5 text-cyan-400" />
-              )}
-              <span>{toastNotification.message}</span>
+              <Bot className="w-4 h-4 text-cyan-600 dark:text-cyan-400 animate-pulse" />
+              <span>AI Clinical Interview (SOCRATES)</span>
             </div>
-          )}
 
-          {/* History Mode Toggle Pill */}
-          <div className={`inline-flex items-center p-1 rounded-xl border ${
-            isLight ? 'bg-slate-100 border-slate-300' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <button
-              type="button"
-              onClick={() => setHistoryMode('allopathic')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                patientData.history_mode === 'allopathic'
-                  ? isLight
-                    ? 'bg-white text-cyan-800 shadow-sm border border-cyan-200'
-                    : 'bg-cyan-500 text-slate-950 shadow-md'
-                  : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Allopathic Triage
-            </button>
-            <button
-              type="button"
-              onClick={() => setHistoryMode('ayush')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                patientData.history_mode === 'ayush'
-                  ? isLight
-                    ? 'bg-emerald-100 text-emerald-900 shadow-sm border border-emerald-300'
-                    : 'bg-emerald-500 text-slate-950 shadow-md'
-                  : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5 text-amber-500" />
-              <span>Ayush Agni Pariksha</span>
-            </button>
+            {/* History Mode Toggle Pill */}
+            <div className={`inline-flex items-center p-0.5 rounded-xl border-2 ${
+              isLight ? 'bg-slate-100 border-slate-300' : 'bg-slate-900 border-slate-700'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setHistoryMode('allopathic')}
+                className={`px-3 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                  patientData.history_mode === 'allopathic'
+                    ? isLight
+                      ? 'bg-white text-cyan-950 shadow-sm border border-cyan-300 font-black'
+                      : 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                    : isLight ? 'text-slate-700 hover:text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Allopathic Triage
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryMode('ayush')}
+                className={`px-3 py-1 rounded-lg text-xs font-black flex items-center gap-1 transition cursor-pointer ${
+                  patientData.history_mode === 'ayush'
+                    ? isLight
+                      ? 'bg-emerald-100 text-emerald-950 shadow-sm border border-emerald-400 font-black'
+                      : 'bg-emerald-500 text-slate-950 shadow-md font-black'
+                    : isLight ? 'text-slate-700 hover:text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>Ayush Agni</span>
+              </button>
+            </div>
           </div>
 
+          <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isLight ? 'text-slate-950' : 'text-white'}`}>
+            Multimodal Symptom Intake
+          </h2>
         </div>
-
-        <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-          Multimodal Symptom Intake
-        </h2>
-        {patientData.full_name && (
-          <div className="mt-1 flex items-center justify-center gap-2 flex-wrap">
-            <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-              Patient: <strong className="text-emerald-500">{patientData.full_name}</strong>
-              {patientData.age ? ` (${patientData.age}y • ${patientData.gender})` : ''}
-            </span>
-            {patientData.demo_chief_complaint && (
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 font-semibold">
-                Target Complaint: {patientData.demo_chief_complaint}
-              </span>
-            )}
-          </div>
-        )}
-        <p className="text-emerald-500 font-bold text-base sm:text-lg mt-0.5">
-          लक्षण एवं स्वास्थ्य इतिहास पूछताछ
-        </p>
       </div>
 
       {/* 2. PROGRESS STEPPER BAR */}
-      <div className="w-full mb-5">
-        <div className="flex items-center justify-between text-xs font-bold mb-1.5 px-1">
-          <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
-            Step 4: Clinical Question {currentQIndex + 1} of {questions.length}
+      <div className="w-full mb-2">
+        <div className="flex items-center justify-between text-xs font-black mb-1 px-1">
+          <span className={`px-3 py-1 rounded-xl border-2 font-black shadow-xs ${
+            isLight ? 'bg-white border-slate-300 text-slate-950' : 'bg-slate-900 border-slate-700 text-slate-100'
+          }`}>
+            Step 4: Question {currentQIndex + 1} of {questions.length}
           </span>
-          <span className="text-cyan-500 font-mono">
+          <span className="text-cyan-600 dark:text-cyan-400 font-mono font-black px-3 py-1 rounded-xl border-2 border-cyan-300 dark:border-cyan-800 bg-white dark:bg-slate-900 shadow-xs">
             {Math.round(((currentQIndex + 1) / questions.length) * 100)}% Complete
           </span>
         </div>
-        <div className={`w-full h-2.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`}>
+        <div className={`w-full h-2.5 rounded-xl overflow-hidden border ${isLight ? 'bg-slate-200 border-slate-300' : 'bg-slate-800 border-slate-700'}`}>
           <div 
-            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 rounded-full transition-all duration-300"
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 rounded-xl transition-all duration-300"
             style={{ width: `${((currentQIndex + 1) / questions.length) * 100}%` }}
           />
         </div>
@@ -699,43 +669,30 @@ export const AiInterview = () => {
 
       {/* 3. ACTIVE AI QUESTION CARD */}
       <div
-        className={`rounded-3xl p-6 sm:p-7 border-2 backdrop-blur-md mb-6 shadow-xl transition-all duration-300 relative overflow-hidden ${
+        className={`rounded-2xl p-4 border-2 backdrop-blur-md mb-2.5 shadow-md transition-all relative overflow-hidden ${
           isLight
-            ? 'bg-white/90 border-cyan-400/80 shadow-cyan-900/10 text-slate-900'
-            : 'bg-slate-900/85 border-cyan-500/60 shadow-cyan-950/30 text-white'
+            ? 'bg-white/95 border-cyan-400 text-slate-900'
+            : 'bg-slate-900/90 border-cyan-500/70 text-white'
         }`}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3.5 flex-1">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-600 flex items-center justify-center text-slate-950 shadow-md shrink-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-600 flex items-center justify-center text-slate-950 shadow-md shrink-0">
               <Bot className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-500">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs font-black uppercase tracking-wider text-cyan-500">
                   {currentQ.category}
                 </span>
                 <span className="text-xs text-slate-400">•</span>
-                <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Preferred: {lang}
+                <span className={`text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                  Lang: {lang}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <h3 className={`text-lg sm:text-2xl font-black leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {currentQText}
-                </h3>
-                
-                {/* Active Audio Wave Visual Indicator */}
-                {isPlayingAudio && (
-                  <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 shrink-0 animate-in fade-in">
-                    <span className="w-1 h-3.5 bg-cyan-400 rounded-full animate-[bounce_0.6s_infinite_100ms]" />
-                    <span className="w-1 h-5 bg-cyan-300 rounded-full animate-[bounce_0.6s_infinite_200ms]" />
-                    <span className="w-1 h-2.5 bg-cyan-400 rounded-full animate-[bounce_0.6s_infinite_300ms]" />
-                    <span className="w-1 h-4 bg-cyan-500 rounded-full animate-[bounce_0.6s_infinite_150ms]" />
-                    <span className="text-[10px] font-mono font-bold uppercase ml-1">Speaking</span>
-                  </div>
-                )}
-              </div>
+              <h3 className={`text-lg sm:text-xl font-black leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {currentQText}
+              </h3>
             </div>
           </div>
 
@@ -743,12 +700,12 @@ export const AiInterview = () => {
           <button
             type="button"
             onClick={handlePlayQuestion}
-            className={`p-3 rounded-2xl border transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${
+            className={`p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
               isPlayingAudio
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse shadow-md shadow-cyan-500/30'
+                ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse'
                 : isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
-                : 'bg-slate-800 text-slate-200 hover:bg-slate-750 border-slate-700'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                : 'bg-slate-800 text-slate-200 border-slate-700'
             }`}
             title="Read Question Aloud"
           >
@@ -757,238 +714,205 @@ export const AiInterview = () => {
         </div>
       </div>
 
-      {/* 4. INTERACTION AREA: TOUCH CHIPS OR PAIN RATING */}
-      <div className="w-full mb-6">
-        
-        {/* IF PAIN SCALE: Visual Interactive 1-10 Rating Scale */}
+      {/* 4. BIG CENTERED VOICE INPUT SECTION */}
+      <div
+        className={`rounded-2xl p-3 sm:p-4 border-2 backdrop-blur-md shadow-lg mb-2.5 text-center flex flex-col items-center justify-center ${
+          isLight
+            ? 'bg-gradient-to-b from-cyan-50/90 to-white border-cyan-300 text-slate-900'
+            : 'bg-gradient-to-b from-slate-900/90 to-slate-950 border-cyan-500/40 text-white'
+        }`}
+      >
+        <div className="flex flex-col items-center justify-center mb-2">
+          {/* BIG CENTERED MICROPHONE BUTTON */}
+          <button
+            type="button"
+            onClick={isListening ? stopVoiceRecording : startVoiceRecording}
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all transform active:scale-95 cursor-pointer shadow-xl border-4 ${
+              isListening
+                ? 'bg-rose-500 text-white border-rose-300 animate-pulse ring-8 ring-rose-500/30'
+                : 'bg-gradient-to-tr from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 border-white hover:scale-105 shadow-cyan-500/30'
+            }`}
+            title={isListening ? 'Stop Recording' : 'Speak Answer'}
+          >
+            {isListening ? (
+              <MicOff className="w-8 h-8 sm:w-10 sm:h-10 stroke-[2.5]" />
+            ) : (
+              <Mic className="w-8 h-8 sm:w-10 sm:h-10 stroke-[2.5]" />
+            )}
+          </button>
+          
+          <span className="text-xs sm:text-sm font-black mt-1 text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">
+            {isListening ? '🎙️ LISTENING NOW... SPEAK CLEARLY' : '🎙️ TAP BIG MIC TO SPEAK / बोलकर जवाब दें'}
+          </span>
+        </div>
+
+        {/* Real-time Transcribed Text Input */}
+        <div className="w-full relative flex items-center max-w-2xl mx-auto">
+          <input
+            type="text"
+            value={voiceText}
+            onChange={(e) => setVoiceText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAnswerSubmit(voiceText, 'voice');
+            }}
+            placeholder={
+              isListening
+                ? 'Listening... Speak your symptoms clearly'
+                : 'Spoken or typed response appears here...'
+            }
+            className={`w-full h-12 pl-4 pr-12 rounded-xl border-2 text-sm sm:text-base font-bold placeholder-slate-400 focus:outline-none transition shadow-inner ${
+              isLight
+                ? 'bg-white border-cyan-300 text-slate-900 focus:border-cyan-500'
+                : 'bg-slate-950 border-slate-700 text-white focus:border-cyan-400'
+            }`}
+          />
+
+          <button
+            type="button"
+            disabled={!voiceText.trim() || isSavingTurn}
+            onClick={() => handleAnswerSubmit(voiceText, 'voice')}
+            className="absolute right-1.5 p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 disabled:opacity-30 transition cursor-pointer"
+            title="Send Response"
+          >
+            {isSavingTurn ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* 5. INTERACTION AREA: SQUARE CHOICE CARDS OR PAIN SCALE */}
+      <div className="w-full mb-2.5">
         {currentQ.isPainScale ? (
           <div
-            className={`rounded-3xl p-6 sm:p-7 border backdrop-blur-md shadow-xl ${
+            className={`rounded-2xl p-3 sm:p-4 border backdrop-blur-md shadow-md ${
               isLight
                 ? 'bg-white/90 border-slate-200 text-slate-900'
                 : 'bg-slate-900/85 border-slate-700/60 text-white'
             }`}
           >
-            <div className="text-center mb-5">
-              <span className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Tap Your Pain Level / अपना दर्द स्तर चुनें (1 = Mild, 10 = Emergency)
+            <div className="text-center mb-2">
+              <span className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
+                OR TAP PAIN LEVEL (1 = MILD, 10 = EMERGENCY)
               </span>
             </div>
 
-            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3 mb-6">
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 mb-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
-                const isMild = num <= 3; // 1 to 3: Green tint
-                const isModerate = num >= 4 && num <= 6; // 4 to 6: Yellow tint
-                const isSevere = num >= 7; // 7 to 10: Red tint with pulsing warning
+                const isMild = num <= 3;
+                const isModerate = num >= 4 && num <= 6;
 
                 return (
                   <button
                     key={num}
                     type="button"
                     onClick={() => handlePainRating(num)}
-                    className={`h-18 sm:h-22 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-150 transform active:scale-95 cursor-pointer shadow-md select-none ${
+                    className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all transform active:scale-95 cursor-pointer shadow-sm ${
                       isMild
                         ? isLight
-                          ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-400 text-emerald-950 hover:border-emerald-500 shadow-emerald-500/10'
-                          : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/50 text-emerald-300 shadow-emerald-950/30'
+                          ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-500 text-emerald-950 font-black'
+                          : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500 text-emerald-300 font-black'
                         : isModerate
                         ? isLight
-                          ? 'bg-amber-50 hover:bg-amber-100 border-amber-400 text-amber-950 hover:border-amber-500 shadow-amber-500/10'
-                          : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/50 text-amber-300 shadow-amber-950/30'
+                          ? 'bg-amber-50 hover:bg-amber-100 border-amber-500 text-amber-950 font-black'
+                          : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500 text-amber-300 font-black'
                         : isLight
-                        ? 'bg-rose-50 hover:bg-rose-100 border-rose-500 text-rose-950 ring-2 ring-rose-400/40 animate-pulse shadow-rose-500/20'
-                        : 'bg-rose-950/60 hover:bg-rose-900/70 border-rose-500 text-rose-200 ring-2 ring-rose-500/40 animate-pulse shadow-rose-950/40'
+                        ? 'bg-rose-50 hover:bg-rose-100 border-rose-500 text-rose-950 font-black animate-pulse'
+                        : 'bg-rose-950/60 hover:bg-rose-900/70 border-rose-500 text-rose-200 font-black animate-pulse'
                     }`}
                   >
-                    <span className="text-xl sm:text-2xl font-black">{num}</span>
-                    <span className="text-[10px] font-bold mt-1">
-                      {isMild ? '😊 Mild' : isModerate ? '😐 Mod' : num <= 8 ? '😣 Severe' : '🚨 Critical'}
+                    <span className="text-base sm:text-lg font-black">{num}</span>
+                    <span className="text-[9px] font-black uppercase">
+                      {isMild ? 'Mild' : isModerate ? 'Mod' : num <= 8 ? 'Severe' : 'Crit'}
                     </span>
                   </button>
                 );
               })}
             </div>
-
-            <div className={`p-3 rounded-2xl text-xs text-center border flex items-center justify-center gap-2 ${
-              isLight ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-slate-950/60 border-slate-800 text-slate-400'
-            }`}>
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>Selecting 9 or 10 will immediately trigger hospital Emergency Triage protocol.</span>
-            </div>
           </div>
         ) : (
-          /* STANDARD CHIPS GRID */
+          /* SQUARE CHOICE CHIPS GRID */
           <div
-            className={`rounded-3xl p-6 sm:p-7 border backdrop-blur-md shadow-xl ${
+            className={`rounded-2xl p-3 sm:p-4 border backdrop-blur-md shadow-md ${
               isLight
                 ? 'bg-white/90 border-slate-200 text-slate-900'
                 : 'bg-slate-900/85 border-slate-700/60 text-white'
             }`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Tap a Quick Choice (1-Touch Response):</span>
+                <span>OR TAP A QUICK CHOICE (SQUARE FORM CARDS):</span>
               </span>
-              <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Auto-advances to next question</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {currentChips.map((chip, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleAnswerSubmit(chip.label, 'touch', chip.isEmergency)}
-                  className={`p-4 rounded-2xl border text-left font-bold text-sm sm:text-base flex items-center justify-between transition-all duration-150 transform active:scale-95 cursor-pointer shadow-sm select-none ${
+                  className={`p-3 rounded-xl border-2 text-left font-black text-sm sm:text-base flex flex-col justify-between transition-all transform active:scale-95 cursor-pointer shadow-xs min-h-[85px] ${
                     chip.isEmergency
                       ? isLight
-                        ? 'bg-rose-50/80 hover:bg-rose-100 border-rose-300 text-rose-900 hover:border-rose-400 shadow-rose-500/10'
-                        : 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/40 text-rose-200 hover:border-rose-400 shadow-rose-950/20'
+                        ? 'bg-rose-50 hover:bg-rose-100 border-rose-400 text-rose-950'
+                        : 'bg-rose-950/40 hover:bg-rose-900/50 border-rose-500 text-rose-200'
                       : isLight
-                      ? 'bg-slate-50 hover:bg-cyan-50/80 border-slate-200 text-slate-800 hover:border-cyan-400 hover:text-cyan-900 shadow-slate-200/50'
-                      : 'bg-slate-800/80 hover:bg-slate-750 border-slate-700/80 text-slate-100 hover:border-cyan-500/50 hover:text-cyan-200'
+                      ? 'bg-slate-50 hover:bg-cyan-50 border-slate-300 text-slate-900 hover:border-cyan-400'
+                      : 'bg-slate-800/90 hover:bg-slate-750 border-slate-700 text-white hover:border-cyan-400'
                   }`}
                 >
-                  <span className="flex-1 pr-2">{chip.label}</span>
-                  {chip.isEmergency ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shrink-0 shadow-xs">
-                      Emergency
-                    </span>
-                  ) : (
-                    <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
-                  )}
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-black text-cyan-500 uppercase">Option {idx + 1}</span>
+                    {chip.isEmergency && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-rose-500 text-white">
+                        Emergency
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-black line-clamp-2 leading-tight">{chip.label}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
-
-      </div>
-
-      {/* 5. BOTTOM DUAL-MODE INPUT: GLOWING MICROPHONE & REAL-TIME SPEECH */}
-      <div
-        className={`rounded-3xl p-5 sm:p-6 border backdrop-blur-md shadow-xl mb-6 ${
-          isLight
-            ? 'bg-white/90 border-slate-200 text-slate-900'
-            : 'bg-slate-900/85 border-slate-700/60 text-white'
-        }`}
-      >
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          
-          {/* Glowing Animated Microphone Button */}
-          <div className="flex flex-col items-center shrink-0">
-            <button
-              type="button"
-              onClick={isListening ? stopVoiceRecording : startVoiceRecording}
-              className={`w-18 h-18 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xl ${
-                isListening
-                  ? 'bg-rose-500 text-white animate-pulse ring-8 ring-rose-500/30 shadow-rose-500/50'
-                  : 'bg-gradient-to-tr from-cyan-500 to-teal-400 hover:from-cyan-400 hover:to-teal-300 text-slate-950 shadow-cyan-500/30'
-              }`}
-              title={isListening ? 'Tap to Stop Recording' : 'Tap to Speak Answer'}
-            >
-              {isListening ? (
-                <MicOff className="w-8 h-8 stroke-[2.5]" />
-              ) : (
-                <Mic className="w-8 h-8 stroke-[2.5]" />
-              )}
-            </button>
-            <span className="text-[11px] font-bold mt-2 text-cyan-500 uppercase tracking-wider">
-              {isListening ? 'Listening... बोलें' : 'Tap to Speak'}
-            </span>
-          </div>
-
-          {/* Real-time Transcribed Text Box & Send Button */}
-          <div className="flex-1 w-full space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
-                Voice Transcription or Manual Typing ({lang}):
-              </span>
-              {isListening && (
-                <span className="text-rose-500 font-bold flex items-center gap-1.5 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-rose-500" />
-                  Recording Audio...
-                </span>
-              )}
-            </div>
-
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={voiceText}
-                onChange={(e) => setVoiceText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAnswerSubmit(voiceText, 'voice');
-                }}
-                placeholder={
-                  isListening
-                    ? 'Listening... Speak your symptoms clearly (अपनी भाषा में बोलें)'
-                    : 'Transcribed speech appears here, or type your answer...'
-                }
-                className={`w-full h-14 pl-4 pr-14 rounded-2xl border text-base font-medium placeholder-slate-400 focus:outline-none transition shadow-inner ${
-                  isLight
-                    ? 'bg-slate-50 border-slate-300 text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/20'
-                    : 'bg-slate-950 border-slate-700 text-white focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20'
-                }`}
-              />
-
-              <button
-                type="button"
-                disabled={!voiceText.trim() || isSavingTurn}
-                onClick={() => handleAnswerSubmit(voiceText, 'voice')}
-                className="absolute right-2 p-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer shadow-md"
-                title="Send Response"
-              >
-                {isSavingTurn ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-              <span>Speaks: {langConfig.name} ({langConfig.code}) • All 6 Indian Languages Active</span>
-              <span>Say "Chest Pain" or "Fever" to test Red-Flag triage</span>
-            </div>
-          </div>
-
-        </div>
       </div>
 
       {/* 6. NAVIGATION FOOTER */}
-      <div className="w-full flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
+      <div className="w-full flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => {
             if (currentQIndex > 0) setCurrentQIndex(prev => prev - 1);
             else prevStep();
           }}
-          className={`w-full sm:w-auto h-12 sm:h-14 px-6 rounded-2xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 cursor-pointer select-none ${
+          className={`h-11 px-5 rounded-xl border-2 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer ${
             isLight
               ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
           }`}
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>{currentQIndex > 0 ? 'Previous Question' : 'Back to Consent'}</span>
+          <span>{currentQIndex > 0 ? 'Prev Question' : 'Back'}</span>
         </button>
 
         <button
           type="button"
           disabled={isGeneratingSummary}
           onClick={handleFinishInterview}
-          className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-teal-500/25 transition-all duration-150 active:scale-95 cursor-pointer disabled:opacity-75 disabled:cursor-wait select-none"
+          className="h-11 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition active:scale-95 cursor-pointer disabled:opacity-75"
         >
           {isGeneratingSummary ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Generating AI Clinical Summary...</span>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Generating Summary...</span>
             </>
           ) : (
             <>
-              <span>Finish Interview & Upload Docs (Step 5)</span>
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+              <span>Finish Triage (Step 5)</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </>
           )}
         </button>
