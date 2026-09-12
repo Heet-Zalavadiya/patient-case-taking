@@ -26,9 +26,7 @@ from schemas.clinical import (
     SessionResponse,
     StructuredHistoryResponse,
 )
-from schemas.patient import PatientCreate, PatientResponse
-from schemas.clinical import SessionResponse, StructuredHistoryResponse
-import hashlib
+from schemas.patient import PatientCreate, PatientResponse, ConsentCreate, ConsentResponse
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 

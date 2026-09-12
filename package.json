@@ -2,8 +2,15 @@
   "name": "patient-case-taking-monorepo",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend/patient",
+    "frontend/doctor"
+  ],
   "scripts": {
     "dev": "node run_frontends.js",
+    "dev:all": "concurrently -n \"portal,patient,doctor\" -c \"yellow,cyan,magenta\" \"node frontend/gateway/portal.js\" \"npm run dev:patient\" \"npm run dev:doctor\"",
+    "dev:platform": "node run_frontends.js",
+    "install:all": "npm install --prefix frontend/patient && npm install --prefix frontend/doctor",
     "dev:patient": "npm --prefix frontend/patient run dev",
     "dev:doctor": "npm --prefix frontend/doctor run dev",
     "build:patient": "npm --prefix frontend/patient run build",
@@ -15,5 +22,11 @@
     "medikiosk",
     "ayush",
     "opd-intake"
-  ]
+  ],
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }

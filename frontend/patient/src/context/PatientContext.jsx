@@ -43,7 +43,9 @@ const initialPatientState = {
   history_mode: 'allopathic', // 'allopathic' | 'ayush'
   interview_turns: [],
   red_flag_alert: null,
-  uploaded_documents: []
+  uploaded_documents: [],
+  painLocations: [], // Body map selected pain areas e.g. ['Stomach & Abdomen']
+  pain_locations: []
 };
 
 const PatientContext = createContext(undefined);
@@ -259,11 +261,11 @@ export const PatientProvider = ({ children }) => {
     }));
   };
 
-  // Step navigation (bounded 1 to 6)
+  // Step navigation (bounded 1 to 7)
   const nextStep = () => {
     setPatientData((prev) => ({
       ...prev,
-      current_step: Math.min(prev.current_step + 1, 6)
+      current_step: Math.min(prev.current_step + 1, 7)
     }));
   };
 
@@ -275,12 +277,20 @@ export const PatientProvider = ({ children }) => {
   };
 
   const goToStep = (stepNumber) => {
-    if (stepNumber >= 1 && stepNumber <= 6) {
+    if (stepNumber >= 1 && stepNumber <= 7) {
       setPatientData((prev) => ({
         ...prev,
         current_step: stepNumber
       }));
     }
+  };
+
+  const setPainLocations = (locations) => {
+    setPatientData((prev) => ({
+      ...prev,
+      painLocations: locations,
+      pain_locations: locations
+    }));
   };
 
   const setTokenNumber = (token_number) => {
@@ -329,6 +339,7 @@ export const PatientProvider = ({ children }) => {
     nextStep,
     prevStep,
     goToStep,
+    setPainLocations,
     setTokenNumber,
     resetSession
   };

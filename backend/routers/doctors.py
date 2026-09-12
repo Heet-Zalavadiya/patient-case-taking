@@ -55,9 +55,55 @@ def doctor_login(payload: DoctorLoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/queue", response_model=List[PatientResponse])
-def get_doctor_queue(db: Session = Depends(get_db)):
+def get_doctor_queue(include_completed: bool = False, db: Session = Depends(get_db)):
     """Get active patient queue for Doctor Dashboard."""
-    return db.query(Patient).order_by(Patient.patient_id.desc()).all()
+    query = db.query(Patient)
+    if not include_completed:
+        query = query.filter(Patient.is_active == 1)
+    return query.order_by(Patient.patient_id.desc()).all()
+
+
+@router.post("/queue/{patient_id}/complete")
+@router.post("/patients/{patient_id}/complete")
+def complete_patient_in_queue(patient_id: str, db: Session = Depends(get_db)):
+    """Mark a patient and their active sessions as completed in the clinical queue."""
+    from datetime import datetime
+    from models.clinical_session import ClinicalSession
+
+    clean_id = patient_id
+    if isinstance(patient_id, str) and patient_id.lower().startswith("pat_"):
+        try:
+            clean_id = int(patient_id.lower().replace("pat_", "").lstrip("0") or "0")
+        except ValueError:
+            clean_id = 0
+
+    try:
+        int_id = int(clean_id)
+    except (ValueError, TypeError):
+        int_id = None
+
+    if int_id:
+        sessions = db.query(ClinicalSession).filter(ClinicalSession.patient_id == int_id).all()
+        for s in sessions:
+            s.status = "completed"
+            if not s.completed_at:
+                s.completed_at = datetime.now()
+
+        patient = db.query(Patient).filter(Patient.patient_id == int_id).first()
+        if patient:
+            patient.is_active = 0
+
+        db.commit()
+
+    return {"status": "success", "patient_id": patient_id, "queue_status": "completed"}
+
+
+@router.post("/queue/reset")
+def reset_doctor_queue(db: Session = Depends(get_db)):
+    """Reset all patients in queue to active status for testing/demo."""
+    db.query(Patient).update({Patient.is_active: 1})
+    db.commit()
+    return {"status": "success", "message": "Doctor queue reset to active"}
 
 
 @router.get("/doctors")

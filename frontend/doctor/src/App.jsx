@@ -6,6 +6,7 @@ import PatientDetailPage from './components/PatientDetailPage';
 import SignedConsultationView from './components/SignedConsultationView';
 import { doctors } from './data/mockData';
 import { mockPatients } from './data/mockFallbackData';
+import usePatientQueue from './hooks/usePatientQueue';
 import { ShieldCheck, PhoneCall, Check, Users, FileText, Sparkles, FileCheck } from 'lucide-react';
 
 export function App() {
@@ -14,6 +15,9 @@ export function App() {
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // 1: Queue, 2: Case Sheet, 3: Sign-Off & Summary
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Shared Patient Queue state across list, case sheet, and case completion
+  const queueState = usePatientQueue();
 
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState(() => {
@@ -92,27 +96,48 @@ export function App() {
     );
   };
 
-  // Find active patient by ID
-  const selectedPatient = mockPatients.find(p => p.patient_id === selectedPatientId) || {
-    patient_id: selectedPatientId || "P001",
-    full_name: "Ramesh Kumar",
-    age: 58,
-    gender: "Male",
-    mrn: "AIIA-2026-9812",
-    token: "EM-101",
-    queue_number: "Q-01",
-    check_in_time: "10:30 AM",
-    status: "waiting",
-    blood_group: "B+",
-    phone: "+91 98112 34567",
-    vitals_summary: {
-      bp: "168/102 mmHg",
-      pulse: "108 bpm",
-      spo2: "91%",
-      temp: "98.8 °F",
-      rr: "26 /min"
-    },
-    triage_category: "Emergency / Priority 1"
+  // Find active patient from queue State or mock fallback
+  const selectedPatient =
+    queueState.patients.find((p) => String(p.patient_id) === String(selectedPatientId)) ||
+    mockPatients.find((p) => String(p.patient_id) === String(selectedPatientId)) ||
+    (queueState.patients.length > 0 ? queueState.patients[0] : mockPatients[0]);
+
+  // Handle Case Sign-Off: marks patient completed immediately and moves to Step 3
+  const handleSignOff = async (patientId) => {
+    const targetId = patientId || selectedPatientId || selectedPatient?.patient_id;
+    if (targetId) {
+      await queueState.markPatientCompleted(targetId, selectedPatient?.session_id);
+    }
+    setCurrentStep(3);
+    showToast('Consultation verified & digitally signed (ABDM Committed)', 'success');
+  };
+
+  // Handle Next Patient: confirms completed, advances queue, and loads next waiting patient's case sheet
+  const handleNextPatient = async () => {
+    const currentId = selectedPatientId || selectedPatient?.patient_id;
+
+    // (a) Confirm current patient's status is saved as completed
+    if (currentId) {
+      await queueState.markPatientCompleted(currentId, selectedPatient?.session_id);
+    }
+
+    // (b) Find the first waiting patient in the remaining active queue
+    const nextPatient = queueState.getNextWaitingPatient(currentId);
+
+    if (nextPatient) {
+      // (c) Navigate immediately to Step 2 (Case Sheet & AI Summary) for the new patient!
+      setSelectedPatientId(nextPatient.patient_id);
+      setCurrentStep(2);
+      showToast(
+        `Next patient loaded: ${nextPatient.full_name} (${nextPatient.token || nextPatient.queue_number})`,
+        'success'
+      );
+    } else {
+      // (d) Handle edge case: empty queue / no more patients
+      setSelectedPatientId(null);
+      setCurrentStep(1);
+      showToast('OPD Queue Cleared — All waiting patients have been completed!', 'info');
+    }
   };
 
   // 3-Step Workflow matching Patient UI Stepper Bar
@@ -129,7 +154,13 @@ export function App() {
       if (selectedPatientId) {
         setCurrentStep(2);
       } else {
-        showToast('Please select a patient from the queue first', 'info');
+        const nextWaiting = queueState.getNextWaitingPatient();
+        if (nextWaiting) {
+          setSelectedPatientId(nextWaiting.patient_id);
+          setCurrentStep(2);
+        } else {
+          showToast('No active patient in queue', 'info');
+        }
       }
     } else if (stepNumber === 3) {
       if (selectedPatientId) {
@@ -190,8 +221,8 @@ export function App() {
         currentDoctor={currentDoctor}
         onSwitchDoctor={handleSwitchDoctor}
         onLogout={handleLogout}
-        activeRedFlagsCount={1}
-        waitingPatientsCount={mockPatients.filter(p => p.status === 'waiting').length}
+        activeRedFlagsCount={queueState.counts.redFlags}
+        waitingPatientsCount={queueState.counts.waiting}
         onNavigateHome={() => {
           setSelectedPatientId(null);
           setCurrentStep(1);
@@ -256,6 +287,7 @@ export function App() {
         {currentStep === 1 && (
           <PatientListPage
             currentDoctor={currentDoctor}
+            queueState={queueState}
             onSelectPatient={(patientId) => {
               setSelectedPatientId(patientId);
               setCurrentStep(2);
@@ -271,10 +303,7 @@ export function App() {
               setSelectedPatientId(null);
               setCurrentStep(1);
             }}
-            onSignOff={() => {
-              setCurrentStep(3);
-              showToast('Consultation verified & digitally signed (ABDM Committed)');
-            }}
+            onSignOff={handleSignOff}
             onAlertAcknowledged={handleAlertAcknowledged}
           />
         )}
@@ -284,11 +313,7 @@ export function App() {
             patient={selectedPatient}
             currentDoctor={currentDoctor}
             onBackToCaseSheet={() => setCurrentStep(2)}
-            onNextPatient={() => {
-              setSelectedPatientId(null);
-              setCurrentStep(1);
-              showToast('Ready for next patient in OPD queue');
-            }}
+            onNextPatient={handleNextPatient}
           />
         )}
       </main>

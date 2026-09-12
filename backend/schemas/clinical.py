@@ -121,6 +121,7 @@ class MedicalDocumentCreate(BaseModel):
 class MedicalDocumentResponse(MedicalDocumentCreate, ORMModel):
     document_id: int
     uploaded_at: Optional[datetime] = None
+    extracted_medications: Optional[List[str]] = None
 
 
 # ── Day 3 Schemas ─────────────────────────────────────────────────────────────

@@ -440,29 +440,6 @@ export const PatientLogin = () => {
             </div>
           </div>
 
-          {/* 4. CHIEF COMPLAINT / SYMPTOMS */}
-          <div className="space-y-1">
-            <label className={`block text-[11px] font-black uppercase tracking-wider ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-              Chief Complaint / स्वास्थ समस्या (Optional)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyan-500">
-                <Stethoscope className="w-4 h-4" />
-              </div>
-              <input
-                type="text"
-                value={chiefComplaint}
-                onChange={(e) => setChiefComplaint(e.target.value)}
-                placeholder="e.g. Chest pain, fever, severe headache, stomach ache..."
-                className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs sm:text-sm font-bold placeholder-slate-400 focus:outline-none transition-all ${
-                  isLight
-                    ? 'border-slate-300 bg-slate-50 text-slate-900 focus:border-cyan-500 focus:bg-white'
-                    : 'border-slate-700 bg-slate-950 text-white focus:border-cyan-400'
-                }`}
-              />
-            </div>
-          </div>
-
           {/* 5. ADDRESS / CITY */}
           <div className="space-y-1">
             <label className={`block text-[11px] font-black uppercase tracking-wider ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>

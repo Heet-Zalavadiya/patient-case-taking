@@ -1,6 +1,10 @@
 const http = require('http');
+const url = require('url');
 
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const PATIENT_APP_URL = process.env.PATIENT_APP_URL || 'http://localhost:5173';
+const DOCTOR_APP_URL = process.env.DOCTOR_APP_URL || 'http://localhost:5174';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:8000';
 
 const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -137,8 +141,8 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     .card-patient .icon-wrapper { background: rgba(6, 182, 212, 0.15); color: #38bdf8; }
-    .card-doctor .icon-wrapper { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .card-backend .icon-wrapper { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .card-doctor .icon-wrapper { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .card-backend .icon-wrapper { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 
     .card h3 {
       font-family: 'Outfit', sans-serif;
@@ -172,11 +176,11 @@ const htmlContent = `<!DOCTYPE html>
     .btn-patient { background: #0284c7; color: white; }
     .btn-patient:hover { background: #0369a1; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4); }
 
-    .btn-doctor { background: var(--accent-emerald); color: white; }
-    .btn-doctor:hover { background: #047857; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4); }
+    .btn-doctor { background: #7e22ce; color: white; }
+    .btn-doctor:hover { background: #6b21a8; box-shadow: 0 4px 12px rgba(126, 34, 206, 0.4); }
 
-    .btn-backend { background: #7e22ce; color: white; }
-    .btn-backend:hover { background: #6b21a8; box-shadow: 0 4px 12px rgba(126, 34, 206, 0.4); }
+    .btn-backend { background: var(--accent-emerald); color: white; }
+    .btn-backend:hover { background: #047857; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4); }
 
     .port-tag {
       font-size: 0.8rem;
@@ -210,13 +214,13 @@ const htmlContent = `<!DOCTYPE html>
         <div>
           <div class="icon-wrapper">📱</div>
           <h3>Patient Kiosk Portal</h3>
-          <p>Multimodal intake flow with voice-to-text, consent capture, and AI interview follow-ups for OPD patients.</p>
+          <p>Multimodal intake flow with voice-to-text, consent capture, body pain map, and AI follow-up interview for OPD patients.</p>
         </div>
         <div>
-          <a href="http://localhost:5173" target="_blank" class="btn btn-patient">
+          <a href="/patient" class="btn btn-patient">
             Open Patient Portal ➔
           </a>
-          <div class="port-tag">Local Dev Port: http://localhost:5173</div>
+          <div class="port-tag">Route: /patient ➔ ${PATIENT_APP_URL}</div>
         </div>
       </div>
 
@@ -225,13 +229,13 @@ const htmlContent = `<!DOCTYPE html>
         <div>
           <div class="icon-wrapper">👨‍⚕️</div>
           <h3>Doctor Dashboard</h3>
-          <p>Physician evaluation console displaying structured clinical history, red-flag emergency alerts, and OCR lab values.</p>
+          <p>Physician evaluation console displaying short patient summaries, active waiting queue, red-flag emergency alerts, and AI OCR records.</p>
         </div>
         <div>
-          <a href="http://localhost:5174" target="_blank" class="btn btn-doctor">
+          <a href="/doctor" class="btn btn-doctor">
             Open Doctor Console ➔
           </a>
-          <div class="port-tag">Local Dev Port: http://localhost:5174</div>
+          <div class="port-tag">Route: /doctor ➔ ${DOCTOR_APP_URL}</div>
         </div>
       </div>
 
@@ -240,20 +244,20 @@ const htmlContent = `<!DOCTYPE html>
         <div>
           <div class="icon-wrapper">⚙️</div>
           <h3>FastAPI Backend & API Docs</h3>
-          <p>Interactive Swagger API documentation, SQL Server database tables, and ABDM FHIR integration endpoints.</p>
+          <p>Interactive Swagger API documentation, SQL database tables, clinical session logs, and ABDM FHIR integration endpoints.</p>
         </div>
         <div>
-          <a href="http://localhost:8000/docs" target="_blank" class="btn btn-backend">
+          <a href="/docs" class="btn btn-backend">
             Open Swagger Docs ➔
           </a>
-          <div class="port-tag">Local Dev Port: http://localhost:8000</div>
+          <div class="port-tag">Route: /docs ➔ ${BACKEND_API_URL}/docs</div>
         </div>
       </div>
 
     </div>
 
     <footer>
-      MediKiosk Monorepo Portal · Powered by FastAPI, React & SQL Server
+      MediKiosk Monorepo Portal · Powered by FastAPI, React & Express Gateway
     </footer>
   </div>
 
@@ -261,10 +265,55 @@ const htmlContent = `<!DOCTYPE html>
 </html>`;
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(htmlContent);
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname || '/';
+
+  // 1. Route /patient -> Redirect to Patient App (5173)
+  if (pathname === '/patient' || pathname.startsWith('/patient/')) {
+    const subPath = pathname.replace(/^\/patient/, '') || '/';
+    const targetUrl = new URL(subPath, PATIENT_APP_URL);
+    if (parsedUrl.search) {
+      targetUrl.search = parsedUrl.search;
+    }
+    res.writeHead(302, { Location: targetUrl.toString() });
+    return res.end();
+  }
+
+  // 2. Route /doctor -> Redirect to Doctor App (5174)
+  if (pathname === '/doctor' || pathname.startsWith('/doctor/')) {
+    const subPath = pathname.replace(/^\/doctor/, '') || '/';
+    const targetUrl = new URL(subPath, DOCTOR_APP_URL);
+    if (parsedUrl.search) {
+      targetUrl.search = parsedUrl.search;
+    }
+    res.writeHead(302, { Location: targetUrl.toString() });
+    return res.end();
+  }
+
+  // 3. Route /docs, /api, /backend -> Redirect to FastAPI Swagger docs
+  if (pathname === '/docs' || pathname === '/api' || pathname === '/backend') {
+    res.writeHead(302, { Location: `${BACKEND_API_URL}/docs` });
+    return res.end();
+  }
+
+  // 4. Default / -> Central Platform Portal
+  if (pathname === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(htmlContent);
+  }
+
+  // 404 for any other path
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('404 Not Found');
 });
 
 server.listen(PORT, () => {
+  console.log('====================================================');
   console.log(`🌐 Central Platform Gateway Portal running on http://localhost:${PORT}`);
+  console.log(`📱 Route /patient -> ${PATIENT_APP_URL}`);
+  console.log(`👨‍⚕️ Route /doctor  -> ${DOCTOR_APP_URL}`);
+  console.log(`⚙️ Route /docs    -> ${BACKEND_API_URL}/docs`);
+  console.log('====================================================');
 });
+
+
