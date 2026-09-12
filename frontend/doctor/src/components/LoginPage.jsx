@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { doctors } from '../data/mockData';
 
+import { loginDoctor } from '../api';
+
 export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => {
   const isDark = theme === 'dark';
   const [selectedDoctorIndex, setSelectedDoctorIndex] = useState(0);
@@ -55,43 +57,28 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const trimmedId = loginId.trim().toLowerCase();
-      // Match doctor by exact or partial login_id or name
-      const matched = doctors.find(
-        d => d.login_id.toLowerCase() === trimmedId || 
-             d.name.toLowerCase().includes(trimmedId)
-      );
+    try {
+      const res = await loginDoctor({
+        login_id: loginId,
+        password: password,
+        is_ayush_practitioner: isAyushPractitioner
+      });
 
-      let activeDoctor;
-      if (matched) {
-        // Authenticate into that specific known doctor
-        activeDoctor = { ...matched };
+      if (res.success && res.data) {
+        setIsLoading(false);
+        onLoginSuccess(res.data);
       } else {
-        // Dynamic doctor profile for custom login
-        activeDoctor = {
-          doctor_id: isAyushPractitioner ? "doc_custom_ayush" : "doc_custom_allopathic",
-          login_id: loginId.trim() || (isAyushPractitioner ? 'dr.anand' : 'dr.rajesh'),
-          name: isAyushPractitioner ? "Dr. Anand Kulkarni" : "Dr. Rajesh Sharma",
-          qualification: isAyushPractitioner ? "BAMS, MD (Ayurveda)" : "MBBS, MD (Internal Medicine)",
-          department: isAyushPractitioner ? "General Medicine & Kayachikitsa" : "Department of Clinical Medicine",
-          institution: "All India Institute of Ayurveda • Ministry of AYUSH",
-          is_ayush_practitioner: isAyushPractitioner,
-          avatar: isAyushPractitioner 
-            ? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"
-            : "https://images.unsplash.com/photo-1594824813580-77a83d78c3b7?w=150&auto=format&fit=crop&q=80",
-          active_opd_room: isAyushPractitioner ? "OPD Room #14" : "OPD Room #104"
-        };
+        throw new Error('Authentication failed');
       }
-
+    } catch (err) {
       setIsLoading(false);
-      onLoginSuccess(activeDoctor);
-    }, 350);
+      setErrorMsg(err.message || 'Invalid credentials or connection error');
+    }
   };
 
   return (
