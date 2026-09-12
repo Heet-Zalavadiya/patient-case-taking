@@ -246,13 +246,13 @@ export const PatientListPage = ({
                   {/* Left: Token, Demographics, Chief Complaint, Vitals */}
                   <div className="flex items-start gap-5 flex-1 min-w-0">
                     {/* Token Badge */}
-                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold shrink-0 shadow-inner ${
+                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold shrink-0 shadow-inner px-1 ${
                       isHighRedFlag
                         ? 'bg-rose-950 text-rose-300 border border-rose-500/60 animate-alert-pulse'
                         : 'bg-slate-950 text-cyan-400 border border-slate-800'
                     }`}>
-                      <span className="text-[11px] uppercase font-black tracking-wider text-slate-400">Token</span>
-                      <span className="text-xl sm:text-2xl font-black tracking-tight font-mono">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Token</span>
+                      <span className="text-xs sm:text-sm font-black tracking-tight font-mono whitespace-nowrap text-center">
                         {patient.token || patient.queue_number}
                       </span>
                     </div>

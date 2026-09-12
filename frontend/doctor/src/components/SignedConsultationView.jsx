@@ -89,7 +89,7 @@ export const SignedConsultationView = ({
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Official OPD Token & Queue Number
               </span>
-              <div className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 tracking-tight font-mono my-1">
+              <div className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 tracking-tight font-mono my-1 whitespace-nowrap">
                 {patient?.token || patient?.queue_number || 'EM-101'}
               </div>
               <div className="text-xs font-semibold text-emerald-400 flex items-center justify-center gap-1.5">
