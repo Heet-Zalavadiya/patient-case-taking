@@ -3,7 +3,11 @@ import { usePatient } from '../../context/PatientContext';
 import { PatientLogin } from '../steps/PatientLogin';
 import { LanguageSelect } from '../steps/LanguageSelect';
 import { ConsentScreen } from '../steps/ConsentScreen';
-import { PatientHome } from '../steps/PatientHome';
+import { AiInterview } from '../steps/AiInterview';
+import { DocumentUpload } from '../steps/DocumentUpload';
+import { CaseSummaryToken } from '../steps/CaseSummaryToken';
+import { speakPhrase } from '../../utils/speechUtils';
+import { subscribeBackendStatus, apiCheckHealth } from '../../services/api';
 import { 
   Activity, 
   Clock, 
@@ -14,25 +18,48 @@ import {
   ShieldCheck, 
   Check, 
   ChevronRight, 
-  RotateCcw,
-  Sparkles,
-  HeartPulse,
-  Info,
-  PhoneCall
+  RotateCcw, 
+  Sparkles, 
+  HeartPulse, 
+  Info, 
+  PhoneCall,
+  Sun,
+  Moon,
+  Volume2
 } from 'lucide-react';
 
 export const KioskShell = () => {
   const { 
     patientData, 
+    theme,
+    toggleTheme,
     setLanguage, 
     setAccessibilityMode, 
     goToStep, 
     resetSession 
   } = usePatient();
 
+  const isLight = theme === 'light';
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showAccessMenu, setShowAccessMenu] = useState(false);
+  const [isBackendOnline, setIsBackendOnline] = useState(false);
+
+  // Subscribe to backend online / resilient mock status
+  useEffect(() => {
+    const unsubscribe = subscribeBackendStatus((online) => {
+      setIsBackendOnline(online);
+    });
+    apiCheckHealth();
+    const interval = setInterval(() => {
+      apiCheckHealth();
+    }, 10000);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
 
   // Live ticking clock for hospital kiosk
   useEffect(() => {
@@ -59,11 +86,66 @@ export const KioskShell = () => {
   });
 
   const steps = [
-    { number: 1, title: 'Identification', sub: 'पहचान' },
+    { number: 1, title: 'Login', sub: 'पहचान' },
     { number: 2, title: 'Language', sub: 'भाषा' },
     { number: 3, title: 'Consent', sub: 'सहमति' },
-    { number: 4, title: 'Ready', sub: 'टोकन' }
+    { number: 4, title: 'AI Case-Taking', sub: 'एआई इनटेक' },
+    { number: 5, title: 'Upload Docs', sub: 'दस्तावेज़' },
+    { number: 6, title: 'Token', sub: 'टोकन' }
   ];
+
+  // Audio-guided accessibility: announce screen name after 400ms delay
+  useEffect(() => {
+    if (patientData.accessibility_mode !== 'audio-guided') return;
+    // Step 4 (AI Interview) and Step 6 (CaseSummaryToken) handle their own rich question/token narration
+    if (patientData.current_step === 4 || patientData.current_step === 6) return;
+
+    const screenAnnouncements = {
+      1: {
+        Hindi: 'मरीज़ पहचान एवं लॉगिन स्क्रीन पर आपका स्वागत है।',
+        English: 'Welcome to Patient Login. Please enter your ABHA number or mobile.',
+        Gujarati: 'દર્દી ઓળખ અને લૉગિન સ્ક્રીનમાં આપનું સ્વાગત છે.',
+        Marathi: 'रुग्ण ओळख आणि लॉगिन स्क्रीनवर आपले स्वागत आहे.',
+        Tamil: 'நோயாளி உள்நுழைவு திரைக்கு வரவேற்கிறோம்.',
+        Bengali: 'রোগী লগইন স্ক্রিনে আপনাকে স্বাগতম।'
+      },
+      2: {
+        Hindi: 'कृपया अपनी पसंदीदा भाषा चुनें।',
+        English: 'Please select your preferred language.',
+        Gujarati: 'કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો.',
+        Marathi: 'कृपया आपली पसंतीची भाषा निवडा.',
+        Tamil: 'தயவுசெய்து உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்.',
+        Bengali: 'অনুগ্রহ করে আপনার পছন্দের ভাষা নির্বাচন করুন।'
+      },
+      3: {
+        Hindi: 'डिजिटल व्यक्तिगत डेटा संरक्षण सहमति स्क्रीन।',
+        English: 'Digital Personal Data Protection Consent Screen.',
+        Gujarati: 'ડિજિટલ પર્સનલ ડેટા પ્રોટેક્શન સંમતિ સ્ક્રીન.',
+        Marathi: 'डिजिटल वैयक्तिक डेटा संरक्षण संमती स्क्रीन.',
+        Tamil: 'டிஜிட்டல் தனிநபர் தரவு பாதுகாப்பு ஒப்புதல் திரை.',
+        Bengali: 'ডিজিটাল ব্যক্তিগত ডেটা সুরক্ষা সম্মতি স্ক্রিন।'
+      },
+      5: {
+        Hindi: 'पूर्व मेडिकल पर्ची और जांच रिपोर्ट अपलोड स्क्रीन।',
+        English: 'Medical Document and Prescription Upload Screen.',
+        Gujarati: 'મેડિકલ દસ્તાવેજ અને પ્રિસ્ક્રિપ્શન અપલોડ સ્ક્રીન.',
+        Marathi: 'वैद्यकीय दस्तऐवज आणि प्रिस्क्रिप्शन अपलोड स्क्रीन.',
+        Tamil: 'மருத்துவ ஆவணங்கள் மற்றும் மருந்து சீட்டு பதிவேற்ற திரை.',
+        Bengali: 'মেডিকেল নথি এবং প্রেসক্রিপশন আপলোড স্ক্রিন।'
+      }
+    };
+
+    const currentLang = patientData.preferred_language || 'Hindi';
+    const msg = screenAnnouncements[patientData.current_step]?.[currentLang] || screenAnnouncements[patientData.current_step]?.['Hindi'];
+
+    if (!msg) return;
+
+    const t = setTimeout(() => {
+      speakPhrase(msg, currentLang);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [patientData.current_step, patientData.accessibility_mode, patientData.preferred_language]);
 
   // Render appropriate step
   const renderStepContent = () => {
@@ -75,7 +157,11 @@ export const KioskShell = () => {
       case 3:
         return <ConsentScreen />;
       case 4:
-        return <PatientHome />;
+        return <AiInterview />;
+      case 5:
+        return <DocumentUpload />;
+      case 6:
+        return <CaseSummaryToken />;
       default:
         return <PatientLogin />;
     }
@@ -89,61 +175,105 @@ export const KioskShell = () => {
   };
 
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 select-none relative font-sans ${getAccessibilityClasses()}`}>
-      
-      {/* Background Medical Ambient Glow & Grid Lines */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-cyan-600/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[350px] bg-teal-600/10 rounded-full blur-[140px]" />
-        <div 
-          className="absolute inset-0 opacity-[0.03]" 
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.8) 1px, transparent 0)`,
-            backgroundSize: '36px 36px'
-          }}
-        />
-      </div>
+    <div className={`relative min-h-screen w-full overflow-hidden select-none font-sans transition-colors duration-500 ${isLight ? 'text-slate-900' : 'text-slate-100'} ${getAccessibilityClasses()}`}>
+      {/* LAYER 1: CUSTOM KIOSK AMBIENT BACKGROUND VIDEO */}
+      <video
+        key="custom-kiosk-bg-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none -z-30 brightness-[0.85] contrast-[1.05]"
+        src="/bg-video.mp4"
+      />
 
-      {/* HEADER + STEPPER WRAPPER */}
-      <div className="flex-shrink-0 w-full z-10 pb-4">
+      {/* LAYER 2: DYNAMIC GLASS OVERLAY (MUST BE SEMI-TRANSPARENT, NEVER SOLID) */}
+      <div 
+        className={`fixed inset-0 pointer-events-none -z-20 transition-all duration-300 ${
+          theme === 'dark' 
+            ? 'bg-slate-950/70 backdrop-blur-[2px]' 
+            : 'bg-slate-900/10 bg-gradient-to-b from-white/35 via-transparent to-white/40 backdrop-blur-[1px]'
+        }`} 
+      />
+
+      {/* LAYER 3: ACTUAL KIOSK CONTENT (TRANSPARENT BACKGROUND) */}
+      <div className="relative z-10 flex flex-col h-screen w-full bg-transparent">
+        {/* HEADER + STEPPER WRAPPER */}
+        <div className="flex-shrink-0 w-full z-10 pb-2 sm:pb-4">
+        
         {/* TOP HEADER */}
-        <header className="relative z-20 w-full bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-lg">
-          
+        <header
+          className={`relative z-20 w-full backdrop-blur-xl border-b px-3 py-2 sm:px-6 sm:py-3 flex flex-wrap items-center justify-between gap-2 shadow-lg transition-colors duration-300 ${
+            isLight
+              ? 'bg-white/95 border-slate-200/90 shadow-slate-200/50 text-slate-900'
+              : 'bg-slate-900/90 border-slate-800/80 shadow-slate-950/50 text-white'
+          }`}
+        >
           {/* Left: Branding & Hospital Logo */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 p-2">
-              <HeartPulse className="w-7 h-7 text-slate-950 stroke-[2.5]" />
+          <div className="flex items-center gap-2 sm:gap-3.5">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 p-1.5 sm:p-2 shrink-0">
+              <HeartPulse className="w-5 h-5 sm:w-7 sm:h-7 text-slate-950 stroke-[2.5]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white m-0 p-0 leading-none">
-                  Medi<span className="text-cyan-400">Kiosk</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="text-base sm:text-2xl font-bold sm:font-black tracking-tight m-0 p-0 leading-none">
+                  Medi<span className="text-cyan-500">Kiosk</span>
                 </h1>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] sm:text-[11px] font-bold text-emerald-500 uppercase tracking-wider">
                   OPD-04
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium tracking-wide">
+              <p className={`text-[11px] font-medium tracking-wide hidden sm:block ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                 Ministry of Ayush • All India Institute of Ayurveda
               </p>
             </div>
           </div>
 
-          {/* Center: Live Clock & Hospital Station info */}
-          <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/70 border border-slate-800 text-slate-300">
-            <Clock className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="font-mono text-sm font-semibold tracking-wider text-white">
+          {/* Center: Live Clock & Hospital Station info (hidden on mobile/tablet) */}
+          <div
+            className={`hidden lg:flex items-center gap-3 px-4 py-1.5 rounded-full border transition-colors ${
+              isLight
+                ? 'bg-slate-100/90 border-slate-200 text-slate-700 shadow-inner'
+                : 'bg-slate-950/70 border-slate-800 text-slate-300'
+            }`}
+          >
+            <Clock className="w-4 h-4 text-cyan-500 animate-pulse" />
+            <span className={`font-mono text-sm font-semibold tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {formattedTime}
             </span>
-            <span className="text-slate-600">|</span>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className={isLight ? 'text-slate-300' : 'text-slate-600'}>|</span>
+            <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
               {formattedDate}
             </span>
           </div>
 
-          {/* Right: Quick Language & Accessibility Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right: Quick Language, Theme & Accessibility Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             
+            {/* Theme Toggle Pill (Dark / Light) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer active:scale-95 ${
+                isLight
+                  ? 'bg-amber-100/90 hover:bg-amber-200/90 border-amber-300/80 text-amber-900 shadow-sm'
+                  : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
+              }`}
+              title="Toggle Dark / Light Theme"
+            >
+              {isLight ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
+                  <span className="font-bold hidden xs:inline">Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
+                  <span className="font-bold hidden xs:inline">Dark</span>
+                </>
+              )}
+            </button>
+
             {/* Language Selector Pill */}
             <div className="relative">
               <button
@@ -152,14 +282,24 @@ export const KioskShell = () => {
                   setShowLangMenu(!showLangMenu);
                   setShowAccessMenu(false);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-800 shadow-sm'
+                    : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
+                }`}
               >
-                <Languages className="w-4 h-4 text-cyan-400" />
-                <span>{patientData.preferred_language}</span>
+                <Languages className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" />
+                <span className="truncate max-w-[55px] sm:max-w-none">{patientData.preferred_language}</span>
               </button>
 
               {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-1.5 z-50">
+                <div
+                  className={`absolute right-0 mt-2 w-44 rounded-2xl shadow-2xl p-1.5 z-50 border ${
+                    isLight
+                      ? 'bg-white border-slate-200 text-slate-800 shadow-slate-400/30'
+                      : 'bg-slate-900 border-slate-700 text-slate-200'
+                  }`}
+                >
                   {['Hindi', 'English', 'Gujarati', 'Marathi', 'Bengali', 'Tamil'].map((lang) => (
                     <button
                       key={lang}
@@ -169,12 +309,14 @@ export const KioskShell = () => {
                       }}
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
                         patientData.preferred_language === lang
-                          ? 'bg-cyan-500/20 text-cyan-300'
+                          ? 'bg-cyan-500/20 text-cyan-600 font-bold'
+                          : isLight
+                          ? 'text-slate-700 hover:bg-slate-100'
                           : 'text-slate-300 hover:bg-slate-800'
                       }`}
                     >
                       <span>{lang}</span>
-                      {patientData.preferred_language === lang && <Check className="w-4 h-4 text-cyan-400" />}
+                      {patientData.preferred_language === lang && <Check className="w-4 h-4 text-cyan-500" />}
                     </button>
                   ))}
                 </div>
@@ -189,20 +331,22 @@ export const KioskShell = () => {
                   setShowAccessMenu(!showAccessMenu);
                   setShowLangMenu(false);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer ${
                   patientData.accessibility_mode === 'large-text-high-contrast'
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-500'
                     : patientData.accessibility_mode === 'audio-guided'
-                    ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-500'
+                    : isLight
+                    ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-800 shadow-sm'
                     : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
                 }`}
               >
                 {patientData.accessibility_mode === 'large-text-high-contrast' ? (
-                  <Eye className="w-4 h-4 text-amber-400" />
+                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
                 ) : patientData.accessibility_mode === 'audio-guided' ? (
-                  <Headphones className="w-4 h-4 text-purple-400" />
+                  <Headphones className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500" />
                 ) : (
-                  <SlidersHorizontal className="w-4 h-4 text-teal-400" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-500" />
                 )}
                 <span className="hidden sm:inline">
                   {patientData.accessibility_mode === 'large-text-high-contrast'
@@ -214,7 +358,13 @@ export const KioskShell = () => {
               </button>
 
               {showAccessMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-1.5 z-50">
+                <div
+                  className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl p-1.5 z-50 border ${
+                    isLight
+                      ? 'bg-white border-slate-200 text-slate-800 shadow-slate-400/30'
+                      : 'bg-slate-900 border-slate-700 text-slate-200'
+                  }`}
+                >
                   {[
                     { id: 'standard', label: 'Standard Mode', icon: SlidersHorizontal },
                     { id: 'audio-guided', label: 'Audio-Guided Assistant', icon: Headphones },
@@ -230,7 +380,9 @@ export const KioskShell = () => {
                         }}
                         className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
                           patientData.accessibility_mode === mode.id
-                            ? 'bg-teal-500/20 text-teal-300'
+                            ? 'bg-teal-500/20 text-teal-600 font-bold'
+                            : isLight
+                            ? 'text-slate-700 hover:bg-slate-100'
                             : 'text-slate-300 hover:bg-slate-800'
                         }`}
                       >
@@ -238,7 +390,7 @@ export const KioskShell = () => {
                           <IconComp className="w-4 h-4" />
                           <span>{mode.label}</span>
                         </div>
-                        {patientData.accessibility_mode === mode.id && <Check className="w-4 h-4 text-teal-400" />}
+                        {patientData.accessibility_mode === mode.id && <Check className="w-4 h-4 text-teal-500" />}
                       </button>
                     );
                   })}
@@ -251,18 +403,58 @@ export const KioskShell = () => {
               type="button"
               onClick={resetSession}
               title="Reset Kiosk Session"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/50 hover:text-rose-400 hover:border-rose-800/60 border border-slate-700 text-slate-400 transition cursor-pointer"
+              className={`p-1.5 sm:p-2 rounded-xl border transition cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 border-slate-300 text-slate-600 shadow-sm'
+                  : 'bg-slate-800 hover:bg-rose-950/50 hover:text-rose-400 hover:border-rose-800/60 border-slate-700 text-slate-400'
+              }`}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
           </div>
         </header>
 
         {/* STEPPER PROGRESS BAR */}
-        <div className="relative z-10 w-full bg-slate-900/60 backdrop-blur-md border-b border-slate-800/60 py-3.5 px-4 sm:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-4 gap-2 sm:gap-4 relative">
+        <div
+          className={`relative z-10 w-full backdrop-blur-md border-b py-2 sm:py-3.5 px-3 sm:px-8 transition-colors duration-300 ${
+            isLight
+              ? 'bg-white/80 border-slate-200/80 shadow-sm'
+              : 'bg-slate-900/60 border-slate-800/60'
+          }`}
+        >
+          {/* Mobile Stepper (<md) */}
+          <div
+            className={`flex md:hidden items-center justify-between w-full px-3.5 py-2 backdrop-blur-md rounded-xl border text-xs transition-colors duration-300 ${
+              isLight
+                ? 'bg-white/90 border-slate-200 text-slate-800 shadow-xs'
+                : 'bg-slate-900/80 border-slate-700/60 text-slate-200'
+            }`}
+          >
+            <span className="font-bold text-emerald-500">Step {patientData.current_step} of 6</span>
+            <span className={`font-semibold ${isLight ? 'text-slate-800' : 'text-slate-100'}`}>
+              {patientData.current_step === 1 && "1. Login / पहचान"}
+              {patientData.current_step === 2 && "2. Language / भाषा"}
+              {patientData.current_step === 3 && "3. Consent / सहमति"}
+              {patientData.current_step === 4 && "4. AI Intake / केस"}
+              {patientData.current_step === 5 && "5. Upload / दस्तावेज़"}
+              {patientData.current_step === 6 && "6. Token / टोकन"}
+            </span>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-3 rounded-full transition-all ${
+                    i <= patientData.current_step ? 'bg-emerald-500' : isLight ? 'bg-slate-300' : 'bg-slate-700'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop Stepper (>=md) */}
+          <div className="hidden md:block max-w-5xl mx-auto">
+            <div className="grid grid-cols-6 gap-2 sm:gap-2.5 relative">
               
               {steps.map((step) => {
                 const isCompleted = patientData.current_step > step.number;
@@ -273,16 +465,21 @@ export const KioskShell = () => {
                     key={step.number}
                     type="button"
                     onClick={() => {
-                      // Allow navigating to visited steps or step 1
                       if (isCompleted || step.number <= patientData.current_step) {
                         goToStep(step.number);
                       }
                     }}
                     className={`group flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
                       isCurrent
-                        ? 'bg-cyan-500/15 border border-cyan-500/40 shadow-md shadow-cyan-500/10'
+                        ? isLight
+                          ? 'bg-cyan-50 border border-cyan-400 shadow-md shadow-cyan-100 ring-2 ring-cyan-400/20'
+                          : 'bg-cyan-500/15 border border-cyan-500/40 shadow-md shadow-cyan-500/10'
                         : isCompleted
-                        ? 'bg-slate-900/40 border border-teal-500/30 text-teal-300'
+                        ? isLight
+                          ? 'bg-emerald-50/80 border border-emerald-300 text-emerald-800'
+                          : 'bg-slate-900/40 border border-teal-500/30 text-teal-300'
+                        : isLight
+                        ? 'bg-slate-100/70 border border-slate-200 text-slate-400 opacity-70'
                         : 'bg-slate-950/30 border border-slate-800/50 text-slate-500 opacity-60'
                     }`}
                   >
@@ -290,9 +487,13 @@ export const KioskShell = () => {
                     <div
                       className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 transition-all ${
                         isCompleted
-                          ? 'bg-teal-500 text-slate-950 shadow-sm'
+                          ? 'bg-teal-500 text-slate-950 shadow-sm font-black'
                           : isCurrent
-                          ? 'bg-cyan-400 text-slate-950 ring-4 ring-cyan-500/20 font-black'
+                          ? isLight
+                            ? 'bg-cyan-600 text-white ring-4 ring-cyan-400/30 font-black'
+                            : 'bg-cyan-400 text-slate-950 ring-4 ring-cyan-500/20 font-black'
+                          : isLight
+                          ? 'bg-slate-200 text-slate-600'
                           : 'bg-slate-800 text-slate-400'
                       }`}
                     >
@@ -301,12 +502,18 @@ export const KioskShell = () => {
 
                     {/* Step Label */}
                     <div className="truncate">
-                      <div className={`text-xs sm:text-sm font-bold truncate ${
-                        isCurrent ? 'text-white' : isCompleted ? 'text-teal-300' : 'text-slate-400'
-                      }`}>
+                      <div
+                        className={`text-xs sm:text-sm font-bold truncate ${
+                          isCurrent
+                            ? isLight ? 'text-cyan-950' : 'text-white'
+                            : isCompleted
+                            ? isLight ? 'text-emerald-800' : 'text-teal-300'
+                            : isLight ? 'text-slate-500' : 'text-slate-400'
+                        }`}
+                      >
                         {step.title}
                       </div>
-                      <div className="text-[10px] text-slate-500 hidden sm:block">
+                      <div className={`text-[10px] hidden sm:block ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
                         {step.sub}
                       </div>
                     </div>
@@ -319,41 +526,62 @@ export const KioskShell = () => {
         </div>
       </div>
 
-      {/* MAIN CONTENT CONTAINER */}
-      <main className="relative z-10 flex-1 overflow-y-auto w-full px-6 py-4 mt-2 flex flex-col items-center">
-        <div className="w-full max-w-6xl mx-auto transition-all duration-300 ease-in-out">
+      {/* 3. MAIN CONTENT CONTAINER */}
+      <main className="relative z-10 flex-1 overflow-y-auto w-full px-3 sm:px-6 py-2 sm:py-4 flex flex-col items-center bg-transparent">
+        <div className="w-full max-w-5xl mx-auto transition-all duration-300 ease-in-out">
           {renderStepContent()}
         </div>
       </main>
 
-      {/* BOTTOM KIOSK FOOTER */}
-      <footer className="flex-shrink-0 relative z-20 w-full bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs text-slate-400">
-        
+      {/* 4. BOTTOM KIOSK FOOTER */}
+      <footer
+        className={`flex-shrink-0 relative z-20 w-full backdrop-blur-xl border-t px-3 sm:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs transition-colors duration-300 ${
+          isLight
+            ? 'bg-white/95 border-slate-200/90 text-slate-600 shadow-md'
+            : 'bg-slate-900/90 border-slate-800/80 text-slate-400'
+        }`}
+      >
         {/* Left: Compliance & Security Notice */}
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-teal-400" />
+          <ShieldCheck className="w-4 h-4 text-teal-500" />
           <span className="hidden sm:inline">DPDP Act 2023 & Ayushman Bharat (ABDM) Compliant Node</span>
           <span className="sm:hidden">DPDP & ABDM Compliant</span>
         </div>
 
-        {/* Center: Active Session Token Badge if generated */}
-        {patientData.token_number && (
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Active Token: {patientData.token_number}</span>
-          </div>
-        )}
+        {/* Center: Backend Connectivity & Offline Resilient Mode Indicator */}
+        <div className="flex items-center gap-2">
+          {isBackendOnline ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 font-bold text-xs shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Connected to FastAPI (localhost:8000)</span>
+            </div>
+          ) : (
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold shadow-xs ${
+              isLight ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            }`}>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>Connected to Mock Hub / Offline Resilient Mode</span>
+            </div>
+          )}
+
+          {patientData.token_number && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-600 font-bold text-xs">
+              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+              <span>Active Token: {patientData.token_number}</span>
+            </div>
+          )}
+        </div>
 
         {/* Right: Hospital Staff Assistance */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <PhoneCall className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-1.5">
+            <PhoneCall className="w-3.5 h-3.5 text-cyan-500" />
             <span>Staff Help: <strong>Desk 01 / Ext. 104</strong></span>
           </div>
         </div>
-
       </footer>
 
+      </div>
     </div>
   );
 };

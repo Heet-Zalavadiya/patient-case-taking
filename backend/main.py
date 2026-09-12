@@ -20,6 +20,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # ── CORS Middleware Configuration ─────────────────────────────────────────────
 # Allows seamless communication between React frontend (ports 5174, 5173, 3000) and FastAPI
 origins = [
