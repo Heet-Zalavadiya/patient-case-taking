@@ -26,19 +26,23 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 def post_turn(
     session_id: Union[str, int],
+    turn_number: int,
     ai_question: str,
     patient_response_text: str,
-    input_mode: str = "touch"
+    input_mode: str = "touch",
+    response_language: Optional[str] = "English"
 ) -> Optional[Dict[str, Any]]:
     """
     Log an interview turn.
-    POST /sessions/{id}/turns -> {ai_question, patient_response_text, input_mode}
+    POST /sessions/{id}/turns -> {turn_number, ai_question, patient_response_text, input_mode, response_language}
     """
     url = f"{BACKEND_URL}/sessions/{session_id}/turns"
     payload = {
+        "turn_number": turn_number,
         "ai_question": ai_question,
         "patient_response_text": patient_response_text,
-        "input_mode": input_mode
+        "input_mode": input_mode,
+        "response_language": response_language
     }
     try:
         response = requests.post(url, json=payload, timeout=5)
@@ -52,7 +56,6 @@ def post_turn(
     except requests.exceptions.RequestException as e:
         logger.warning("Could not reach backend at POST %s: %s", url, e)
         return None
-
 
 def post_history(
     session_id: Union[str, int],
