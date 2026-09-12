@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Any
 from pydantic import BaseModel, Field, AliasChoices
 
 # Re-use utilities from our existing hybrid OCR service
-from services.hybrid_ocr import (
+from .hybrid_ocr import (
     get_azure_client,
     _preprocess_for_azure,
     get_gemini_client,

@@ -24,7 +24,7 @@ from google.genai import types
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.core.credentials import AzureKeyCredential
 
-from services.csv_database_service import LocalDrugDatabaseService
+from .csv_database_service import LocalDrugDatabaseService
 
 # ---------------------------------------------------------------------------
 # ENV LOADING — support both cwd .env and parent directory .env

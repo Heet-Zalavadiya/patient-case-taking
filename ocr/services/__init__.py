@@ -10,7 +10,7 @@ Usage:
     from services import ClinicalSummary, MedicationItem
 """
 
-from services.hybrid_ocr import (
+from .hybrid_ocr import (
     process_hybrid_ocr,
     process_prescription,
     ClinicalSummary,
@@ -20,7 +20,7 @@ from services.hybrid_ocr import (
     get_gemini_client,
     DRUG_CLINICAL_OVERRIDES,   # expose so callers can inspect / extend the config
 )
-from services.document_router import (
+from .document_router import (
     process_medical_document,
     extract_medical_document,
     LabReportSummary,
