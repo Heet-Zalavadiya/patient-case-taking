@@ -18,7 +18,7 @@ from models.medical_document import MedicalDocument
 from models.patient import Patient
 from models.red_flag_alert import RedFlagAlert
 from models.structured_history import StructuredHistory
-from schemas.clinical import (
+from schemas.clinical import (   
     AbdmSyncLogCreate,
     AbdmSyncLogResponse,
     AuditLogCreate,
