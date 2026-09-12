@@ -1,0 +1,6 @@
+.env
+__pycache__/
+ocr/data/drugs.db
+ocr/data/medicine.csv
+*.db
+*.sqlite3
