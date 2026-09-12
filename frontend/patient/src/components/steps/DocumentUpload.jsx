@@ -1,28 +1,28 @@
 import React, { useState, useRef } from 'react';
 import { usePatient } from '../../context/PatientContext';
-import { 
-  apiUploadDocument, 
-  apiGetPatientDocuments, 
-  uploadDocument, 
-  uploadMedicalDocument, 
-  getPatientDocuments 
+import {
+  apiUploadDocument,
+  apiGetPatientDocuments,
+  uploadDocument,
+  uploadMedicalDocument,
+  getPatientDocuments
 } from '../../services/api';
-import { 
-  UploadCloud, 
-  Camera, 
-  FileText, 
-  FileCheck2, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Trash2, 
-  Plus, 
-  ArrowRight, 
-  ArrowLeft, 
-  Sparkles, 
-  ShieldCheck, 
-  Clock, 
-  Eye, 
+import {
+  UploadCloud,
+  Camera,
+  FileText,
+  FileCheck2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+  Plus,
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  ShieldCheck,
+  Clock,
+  Eye,
   Paperclip,
   Check,
   Stethoscope,
@@ -32,14 +32,14 @@ import {
 } from 'lucide-react';
 
 export const DocumentUpload = () => {
-  const { 
-    patientData, 
-    theme, 
-    addUploadedDocument, 
-    updateUploadedDocument, 
-    removeUploadedDocument, 
-    nextStep, 
-    prevStep 
+  const {
+    patientData,
+    theme,
+    addUploadedDocument,
+    updateUploadedDocument,
+    removeUploadedDocument,
+    nextStep,
+    prevStep
   } = usePatient();
 
   const isLight = theme === 'light';
@@ -232,20 +232,18 @@ export const DocumentUpload = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center">
-      
+
       {/* 1. SCREEN HEADER (WITH HIGH CONTRAST SOLID GLASS BACKDROP) */}
       <div className="mb-3 text-center">
-        <div className={`inline-block px-6 py-3 rounded-2xl border-2 shadow-xl transition-all ${
-          isLight
+        <div className={`inline-block px-6 py-3 rounded-2xl border-2 shadow-xl transition-all ${isLight
             ? 'bg-white border-teal-400 shadow-slate-500/20 text-slate-950'
             : 'bg-slate-900 border-teal-500 shadow-slate-950/70 text-white'
-        }`}>
+          }`}>
           <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mb-1 border ${
-              isLight
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mb-1 border ${isLight
                 ? 'bg-teal-100 border-teal-300 text-teal-950'
                 : 'bg-teal-500/20 border-teal-500/40 text-teal-300'
-            }`}
+              }`}
           >
             <ScanLine className="w-4 h-4 text-teal-600 dark:text-teal-400 animate-pulse shrink-0" />
             <span>Step 5: Medical Records & Digitization</span>
@@ -259,11 +257,10 @@ export const DocumentUpload = () => {
       {/* 2. DOCUMENT TYPE SELECTOR CHIPS */}
       <div className="w-full mb-3">
         <div className="flex items-center justify-between text-[11px] font-black mb-1.5 px-1">
-          <span className={`px-3 py-1 rounded-xl border-2 font-black shadow-md ${
-            isLight
+          <span className={`px-3 py-1 rounded-xl border-2 font-black shadow-md ${isLight
               ? 'bg-slate-900 border-slate-800 text-white'
               : 'bg-slate-900 border-teal-500/40 text-teal-300'
-          }`}>
+            }`}>
             Select Document Category (प्रकार चुनें):
           </span>
         </div>
@@ -278,22 +275,20 @@ export const DocumentUpload = () => {
                 key={type.id}
                 type="button"
                 onClick={() => setSelectedDocType(type.id)}
-                className={`p-3 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer transform active:scale-98 shadow-sm ${
-                  isSelected
+                className={`p-3 rounded-xl border-2 flex items-center gap-3 transition-all text-left cursor-pointer transform active:scale-98 shadow-sm ${isSelected
                     ? isLight
                       ? 'bg-teal-50 border-teal-500 font-black text-teal-950 ring-2 ring-teal-500/30'
                       : 'bg-teal-500/20 border-teal-400 font-black text-white ring-2 ring-teal-400/30'
                     : isLight
-                    ? 'bg-white hover:bg-slate-50 border-slate-300 text-slate-950 font-bold'
-                    : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200'
-                }`}
+                      ? 'bg-white hover:bg-slate-50 border-slate-300 text-slate-950 font-bold'
+                      : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200'
+                  }`}
               >
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
-                    isSelected
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${isSelected
                       ? isLight ? 'bg-teal-500 text-white border-teal-600' : 'bg-teal-400 text-slate-950 border-teal-300'
                       : isLight ? 'bg-slate-100 text-slate-800 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
+                    }`}
                 >
                   <IconComp className="w-5 h-5" />
                 </div>
@@ -318,15 +313,14 @@ export const DocumentUpload = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`rounded-2xl p-4 sm:p-5 border-2 border-dashed backdrop-blur-md text-center transition-all cursor-pointer shadow-md relative overflow-hidden group ${
-            isDragOver
+          className={`rounded-2xl p-4 sm:p-5 border-2 border-dashed backdrop-blur-md text-center transition-all cursor-pointer shadow-md relative overflow-hidden group ${isDragOver
               ? isLight
                 ? 'bg-teal-50 border-teal-500'
                 : 'bg-teal-950/40 border-teal-400'
               : isLight
-              ? 'bg-white hover:bg-teal-50/70 border-slate-400 hover:border-teal-500 text-slate-950 shadow-md'
-              : 'bg-slate-900/85 hover:bg-slate-850 border-slate-700 hover:border-teal-500/60 text-white'
-          }`}
+                ? 'bg-white hover:bg-teal-50/70 border-slate-400 hover:border-teal-500 text-slate-950 shadow-md'
+                : 'bg-slate-900/85 hover:bg-slate-850 border-slate-700 hover:border-teal-500/60 text-white'
+            }`}
         >
           {/* Hidden File Input */}
           <input
@@ -347,24 +341,22 @@ export const DocumentUpload = () => {
           />
 
           <div className="flex flex-col items-center justify-center">
-            
+
             <div className="flex items-center justify-center gap-2 mb-2">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${
-                  isLight
+                className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${isLight
                     ? 'bg-teal-100 text-teal-800 border-teal-300'
                     : 'bg-teal-500/20 text-teal-300 border-teal-500/40'
-                }`}
+                  }`}
               >
                 <UploadCloud className="w-5 h-5" />
               </div>
 
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${
-                  isLight
+                className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${isLight
                     ? 'bg-cyan-100 text-cyan-800 border-cyan-300'
                     : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                }`}
+                  }`}
               >
                 <Camera className="w-5 h-5" />
               </div>
@@ -382,11 +374,10 @@ export const DocumentUpload = () => {
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className={`px-3.5 py-2 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
-                  isLight
+                className={`px-3.5 py-2 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs ${isLight
                     ? 'bg-cyan-50 hover:bg-cyan-100 border-cyan-400 text-cyan-950'
                     : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-cyan-300'
-                }`}
+                  }`}
               >
                 <Camera className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 <span>Camera Snap</span>
@@ -395,11 +386,10 @@ export const DocumentUpload = () => {
               <button
                 type="button"
                 onClick={handleSimulateScan}
-                className={`px-3.5 py-2 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
-                  isLight
+                className={`px-3.5 py-2 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs ${isLight
                     ? 'bg-teal-50 hover:bg-teal-100 border-teal-400 text-teal-950'
                     : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-teal-300'
-                }`}
+                  }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                 <span>Simulate 1-Tap Scan</span>
@@ -427,17 +417,15 @@ export const DocumentUpload = () => {
               return (
                 <div
                   key={doc.id || doc.document_id}
-                  className={`rounded-xl p-3 border backdrop-blur-md shadow-xs flex items-center justify-between gap-3 ${
-                    isLight
+                  className={`rounded-xl p-3 border backdrop-blur-md shadow-xs flex items-center justify-between gap-3 ${isLight
                       ? 'bg-white border-slate-300 text-slate-950'
                       : 'bg-slate-900/90 border-slate-800 text-white'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 flex-1 truncate">
                     <div
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 overflow-hidden ${
-                        isLight ? 'bg-teal-50 border-teal-200' : 'bg-slate-800 border-slate-700'
-                      }`}
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 overflow-hidden ${isLight ? 'bg-teal-50 border-teal-200' : 'bg-slate-800 border-slate-700'
+                        }`}
                     >
                       {doc.preview_url ? (
                         <img src={doc.preview_url} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -459,11 +447,10 @@ export const DocumentUpload = () => {
                   <button
                     type="button"
                     onClick={() => removeUploadedDocument(doc.id || doc.document_id)}
-                    className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                      isLight
+                    className={`p-1.5 rounded-lg border transition cursor-pointer ${isLight
                         ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
                         : 'bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border-slate-700'
-                    }`}
+                      }`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -479,11 +466,10 @@ export const DocumentUpload = () => {
         <button
           type="button"
           onClick={prevStep}
-          className={`h-12 px-5 rounded-xl border-2 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer ${
-            isLight
+          className={`h-12 px-5 rounded-xl border-2 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer ${isLight
               ? 'bg-white hover:bg-slate-100 text-slate-950 border-slate-400 shadow-md'
               : 'bg-slate-800 hover:bg-slate-750 text-slate-100 border-slate-700'
-          }`}
+            }`}
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Triage</span>
@@ -493,11 +479,10 @@ export const DocumentUpload = () => {
           <button
             type="button"
             onClick={nextStep}
-            className={`h-12 px-5 rounded-xl border-2 font-black text-xs sm:text-sm flex items-center justify-center gap-1 transition cursor-pointer ${
-              isLight
+            className={`h-12 px-5 rounded-xl border-2 font-black text-xs sm:text-sm flex items-center justify-center gap-1 transition cursor-pointer ${isLight
                 ? 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700'
-            }`}
+              }`}
           >
             <span>Skip / No Docs</span>
           </button>

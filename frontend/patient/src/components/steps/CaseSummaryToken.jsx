@@ -2,26 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { usePatient } from '../../context/PatientContext';
 import { speakPhrase } from '../../utils/speechUtils';
 import { generateClinicalSummary } from '../../services/api';
-import { 
-  CheckCircle2, 
-  RotateCcw, 
-  Printer, 
-  Volume2, 
-  Building2, 
-  Clock, 
-  User, 
-  ShieldCheck, 
-  FileText, 
-  Activity, 
-  Flame, 
-  Stethoscope, 
-  PhoneCall, 
-  QrCode, 
-  AlertTriangle, 
-  Check, 
-  Pause, 
-  Play, 
-  Share2, 
+import {
+  CheckCircle2,
+  RotateCcw,
+  Printer,
+  Volume2,
+  Building2,
+  Clock,
+  User,
+  ShieldCheck,
+  FileText,
+  Activity,
+  Flame,
+  Stethoscope,
+  PhoneCall,
+  QrCode,
+  AlertTriangle,
+  Check,
+  Pause,
+  Play,
+  Share2,
   Sparkles,
   ArrowRight,
   ScanLine,
@@ -138,11 +138,10 @@ export const CaseSummaryToken = () => {
     <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center pb-6">
       {/* 1. TOP HEADER & DPDP RESET BAR (WITH HIGH CONTRAST GLASS BACKDROP) */}
       <div className="mb-3 text-center">
-        <div className={`inline-block px-5 py-2.5 rounded-2xl border-2 backdrop-blur-md shadow-lg transition-all ${
-          isLight
+        <div className={`inline-block px-5 py-2.5 rounded-2xl border-2 backdrop-blur-md shadow-lg transition-all ${isLight
             ? 'bg-white/95 border-emerald-300 shadow-slate-400/20 text-slate-950'
             : 'bg-slate-900/95 border-emerald-500/40 shadow-slate-950/60 text-white'
-        }`}>
+          }`}>
           {/* DPDP Countdown Banner */}
           <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs font-bold mb-1 border shadow-xs transition-all max-w-full flex-wrap justify-center">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -152,9 +151,8 @@ export const CaseSummaryToken = () => {
             <button
               type="button"
               onClick={() => setIsTimerPaused(!isTimerPaused)}
-              className={`ml-1 px-1.5 py-0.2 rounded border text-[10px] font-semibold flex items-center gap-0.5 cursor-pointer ${
-                isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-              }`}
+              className={`ml-1 px-1.5 py-0.2 rounded border text-[10px] font-semibold flex items-center gap-0.5 cursor-pointer ${isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                }`}
             >
               {isTimerPaused ? <Play className="w-2.5 h-2.5" /> : <Pause className="w-2.5 h-2.5" />}
               <span>{isTimerPaused ? 'Resume' : 'Pause'}</span>
@@ -169,14 +167,13 @@ export const CaseSummaryToken = () => {
 
       {/* 2. MAIN GRID: TOKEN CARD ON LEFT, CLINICAL SUMMARY ON RIGHT */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch mb-3">
-        
+
         {/* LEFT COLUMN: Official OPD Token Card (lg:col-span-5) */}
         <div
-          className={`lg:col-span-5 rounded-2xl p-3 sm:p-4 border backdrop-blur-md flex flex-col justify-between shadow-xl relative overflow-hidden ${
-            isLight
+          className={`lg:col-span-5 rounded-2xl p-3 sm:p-4 border backdrop-blur-md flex flex-col justify-between shadow-xl relative overflow-hidden ${isLight
               ? 'bg-gradient-to-b from-white via-emerald-50/60 to-slate-50 border-emerald-500/80 text-slate-900'
               : 'bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border-emerald-500/60 text-white'
-          }`}
+            }`}
         >
           <div>
             {/* Header with Department & Audio Announcement Button */}
@@ -193,13 +190,12 @@ export const CaseSummaryToken = () => {
               <button
                 type="button"
                 onClick={playAudioConfirmation}
-                className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                  isPlayingAudio
+                className={`p-1.5 rounded-lg border transition cursor-pointer ${isPlayingAudio
                     ? 'bg-emerald-500 text-slate-950 border-emerald-400 animate-pulse'
                     : isLight
-                    ? 'bg-white hover:bg-slate-100 text-emerald-700 border-slate-300'
-                    : 'bg-slate-800 text-emerald-400 border-slate-700'
-                }`}
+                      ? 'bg-white hover:bg-slate-100 text-emerald-700 border-slate-300'
+                      : 'bg-slate-800 text-emerald-400 border-slate-700'
+                  }`}
                 title="Play Audio Announcement"
               >
                 <Volume2 className="w-4 h-4" />
@@ -208,19 +204,17 @@ export const CaseSummaryToken = () => {
 
             {/* Giant Token Number Display */}
             <div
-              className={`py-2 px-2 rounded-xl text-center mb-2 border ${
-                isLight
+              className={`py-2 px-2 rounded-xl text-center mb-2 border ${isLight
                   ? 'bg-white border border-emerald-500/50 shadow-xs'
                   : 'bg-slate-950/90 border-emerald-500/40'
-              }`}
+                }`}
             >
               <span className={`text-[10px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                 Assigned OPD Token Number
               </span>
               <div
-                className={`text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${
-                  isLight ? 'from-emerald-600 via-teal-600 to-cyan-700' : 'from-emerald-400 via-teal-300 to-cyan-400'
-                } tracking-tight my-0.5 font-mono whitespace-nowrap`}
+                className={`text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${isLight ? 'from-emerald-600 via-teal-600 to-cyan-700' : 'from-emerald-400 via-teal-300 to-cyan-400'
+                  } tracking-tight my-0.5 font-mono whitespace-nowrap`}
               >
                 {tokenNumber}
               </div>
@@ -233,9 +227,8 @@ export const CaseSummaryToken = () => {
             {/* Assigned Room & Estimated Wait Meta Details */}
             <div className="space-y-1.5 text-xs">
               <div
-                className={`flex items-center justify-between p-2 rounded-lg border ${
-                  isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
-                }`}
+                className={`flex items-center justify-between p-2 rounded-lg border ${isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
+                  }`}
               >
                 <span className={`flex items-center gap-1.5 text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   <Building2 className="w-3.5 h-3.5 text-emerald-500" />
@@ -247,9 +240,8 @@ export const CaseSummaryToken = () => {
               </div>
 
               <div
-                className={`flex items-center justify-between p-2 rounded-lg border ${
-                  isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
-                }`}
+                className={`flex items-center justify-between p-2 rounded-lg border ${isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
+                  }`}
               >
                 <span className={`flex items-center gap-1.5 text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -261,9 +253,8 @@ export const CaseSummaryToken = () => {
               </div>
 
               <div
-                className={`flex items-center justify-between p-2 rounded-lg border ${
-                  isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
-                }`}
+                className={`flex items-center justify-between p-2 rounded-lg border ${isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-800/60 border-slate-700/60'
+                  }`}
               >
                 <span className={`flex items-center gap-1.5 text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   <User className="w-3.5 h-3.5 text-cyan-500" />
@@ -281,11 +272,10 @@ export const CaseSummaryToken = () => {
             <button
               type="button"
               onClick={handlePrintSlip}
-              className={`w-full py-2 px-3 rounded-lg font-bold text-xs border flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer ${
-                isLight
+              className={`w-full py-2 px-3 rounded-lg font-bold text-xs border flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer ${isLight
                   ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'
                   : 'bg-slate-800 hover:bg-slate-750 text-white border-slate-700'
-              }`}
+                }`}
             >
               <Printer className="w-3.5 h-3.5 text-cyan-500" />
               <span>{isPrinted ? 'Printed ✓' : 'Print Slip (प्रिंट करें)'}</span>
@@ -296,14 +286,12 @@ export const CaseSummaryToken = () => {
 
         {/* RIGHT COLUMN: Intake Summary, OCR Document Summary & Doctor Transmission Status (lg:col-span-7) */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-2.5">
-          
           {/* Clinical Transmission Status Card */}
           <div
-            className={`rounded-2xl p-3.5 sm:p-4 border backdrop-blur-md shadow-md ${
-              isLight
+            className={`rounded-2xl p-3.5 sm:p-4 border backdrop-blur-md shadow-md ${isLight
                 ? 'bg-white/95 border-emerald-300 text-slate-900'
                 : 'bg-slate-900/90 border-emerald-500/40 text-white'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[11px] font-bold">
@@ -311,11 +299,10 @@ export const CaseSummaryToken = () => {
                 <span>Doctor Terminal Connected (DESK-DOC-04)</span>
               </div>
 
-              <span className={`text-[10px] px-2 py-0.5 rounded-lg font-bold uppercase border ${
-                isAyush 
+              <span className={`text-[10px] px-2 py-0.5 rounded-lg font-bold uppercase border ${isAyush
                   ? isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
                   : isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-800' : 'bg-cyan-950/50 border-cyan-800 text-cyan-300'
-              }`}>
+                }`}>
                 {isAyush ? '🌿 Ayush' : '🩺 Allopathic'}
               </span>
             </div>
@@ -329,12 +316,11 @@ export const CaseSummaryToken = () => {
 
             {/* Quick Metrics Grid */}
             <div className="grid grid-cols-3 gap-2 mt-2.5">
-              
+
               {/* Chief Complaint */}
               <div
-                className={`p-2 rounded-xl border flex flex-col justify-between ${
-                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
-                }`}
+                className={`p-2 rounded-xl border flex flex-col justify-between ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+                  }`}
               >
                 <div className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                   Chief Complaint
@@ -346,9 +332,8 @@ export const CaseSummaryToken = () => {
 
               {/* Digitized Documents */}
               <div
-                className={`p-2 rounded-xl border flex flex-col justify-between ${
-                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
-                }`}
+                className={`p-2 rounded-xl border flex flex-col justify-between ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+                  }`}
               >
                 <div className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                   Documents
@@ -360,9 +345,8 @@ export const CaseSummaryToken = () => {
 
               {/* DPDP Consent Status */}
               <div
-                className={`p-2 rounded-xl border flex flex-col justify-between ${
-                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
-                }`}
+                className={`p-2 rounded-xl border flex flex-col justify-between ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+                  }`}
               >
                 <div className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                   Privacy
@@ -507,9 +491,8 @@ export const CaseSummaryToken = () => {
 
           {/* Complete & Reset Session Card */}
           <div
-            className={`rounded-2xl p-3 border backdrop-blur-md flex items-center justify-between gap-3 shadow-md ${
-              isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-900/85 border-slate-800'
-            }`}
+            className={`rounded-2xl p-3 border backdrop-blur-md flex items-center justify-between gap-3 shadow-md ${isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-900/85 border-slate-800'
+              }`}
           >
             <div className="text-left">
               <div className={`text-xs font-bold flex items-center gap-1 ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
