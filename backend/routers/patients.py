@@ -19,6 +19,7 @@ from models.patient import Patient
 from models.structured_history import StructuredHistory
 from schemas.clinical import (
     ClinicalSummaryResponse,
+    ExtractedLabValueResponse,
     MedicalDocumentDetailResponse,
     SessionResponse,
     StructuredHistoryResponse,
@@ -199,3 +200,18 @@ def get_patient_documents(patient_id: int, db: Session = Depends(get_db)):
         result.append(doc_dict)
 
     return result
+
+
+@router.get("/{patient_id}/labs", response_model=List[ExtractedLabValueResponse])
+def get_patient_lab_values(patient_id: int, db: Session = Depends(get_db)):
+    """Get all extracted lab values for a patient (used for Doctor Dashboard lab table)."""
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    return (
+        db.query(DocumentExtractedLabValue)
+        .join(MedicalDocument, DocumentExtractedLabValue.document_id == MedicalDocument.document_id)
+        .filter(MedicalDocument.patient_id == patient_id)
+        .all()
+    )

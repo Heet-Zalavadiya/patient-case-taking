@@ -167,6 +167,13 @@ def create_red_flag(
     return alert
 
 
+@router.get("/alerts", response_model=List[RedFlagResponse])
+@router.get("/red-flags", response_model=List[RedFlagResponse], include_in_schema=False)
+def list_red_flag_alerts(db: Session = Depends(get_db)):
+    """List all triggered red-flag alerts (used for Doctor Dashboard alerts counter)."""
+    return db.query(RedFlagAlert).order_by(RedFlagAlert.triggered_at.desc()).all()
+
+
 @router.post("/documents", response_model=MedicalDocumentResponse)
 async def create_document(
     request: Request,
