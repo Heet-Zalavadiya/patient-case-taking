@@ -3,7 +3,11 @@ import { usePatient } from '../../context/PatientContext';
 import { PatientLogin } from '../steps/PatientLogin';
 import { LanguageSelect } from '../steps/LanguageSelect';
 import { ConsentScreen } from '../steps/ConsentScreen';
-import { PatientHome } from '../steps/PatientHome';
+import { AiInterview } from '../steps/AiInterview';
+import { DocumentUpload } from '../steps/DocumentUpload';
+import { CaseSummaryToken } from '../steps/CaseSummaryToken';
+import { speakPhrase } from '../../utils/speechUtils';
+import { subscribeBackendStatus, apiCheckHealth } from '../../services/api';
 import { 
   Activity, 
   Clock, 
@@ -14,25 +18,48 @@ import {
   ShieldCheck, 
   Check, 
   ChevronRight, 
-  RotateCcw,
-  Sparkles,
-  HeartPulse,
-  Info,
-  PhoneCall
+  RotateCcw, 
+  Sparkles, 
+  HeartPulse, 
+  Info, 
+  PhoneCall,
+  Sun,
+  Moon,
+  Volume2
 } from 'lucide-react';
 
 export const KioskShell = () => {
   const { 
     patientData, 
+    theme,
+    toggleTheme,
     setLanguage, 
     setAccessibilityMode, 
     goToStep, 
     resetSession 
   } = usePatient();
 
+  const isLight = theme === 'light';
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showAccessMenu, setShowAccessMenu] = useState(false);
+  const [isBackendOnline, setIsBackendOnline] = useState(false);
+
+  // Subscribe to backend online / resilient mock status
+  useEffect(() => {
+    const unsubscribe = subscribeBackendStatus((online) => {
+      setIsBackendOnline(online);
+    });
+    apiCheckHealth();
+    const interval = setInterval(() => {
+      apiCheckHealth();
+    }, 10000);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
 
   // Live ticking clock for hospital kiosk
   useEffect(() => {
@@ -59,11 +86,66 @@ export const KioskShell = () => {
   });
 
   const steps = [
-    { number: 1, title: 'Identification', sub: 'पहचान' },
+    { number: 1, title: 'Login', sub: 'पहचान' },
     { number: 2, title: 'Language', sub: 'भाषा' },
     { number: 3, title: 'Consent', sub: 'सहमति' },
-    { number: 4, title: 'Ready', sub: 'टोकन' }
+    { number: 4, title: 'AI Case-Taking', sub: 'एआई इनटेक' },
+    { number: 5, title: 'Upload Docs', sub: 'दस्तावेज़' },
+    { number: 6, title: 'Token', sub: 'टोकन' }
   ];
+
+  // Audio-guided accessibility: announce screen name after 400ms delay
+  useEffect(() => {
+    if (patientData.accessibility_mode !== 'audio-guided') return;
+    // Step 4 (AI Interview) and Step 6 (CaseSummaryToken) handle their own rich question/token narration
+    if (patientData.current_step === 4 || patientData.current_step === 6) return;
+
+    const screenAnnouncements = {
+      1: {
+        Hindi: 'मरीज़ पहचान एवं लॉगिन स्क्रीन पर आपका स्वागत है।',
+        English: 'Welcome to Patient Login. Please enter your ABHA number or mobile.',
+        Gujarati: 'દર્દી ઓળખ અને લૉગિન સ્ક્રીનમાં આપનું સ્વાગત છે.',
+        Marathi: 'रुग्ण ओळख आणि लॉगिन स्क्रीनवर आपले स्वागत आहे.',
+        Tamil: 'நோயாளி உள்நுழைவு திரைக்கு வரவேற்கிறோம்.',
+        Bengali: 'রোগী লগইন স্ক্রিনে আপনাকে স্বাগতম।'
+      },
+      2: {
+        Hindi: 'कृपया अपनी पसंदीदा भाषा चुनें।',
+        English: 'Please select your preferred language.',
+        Gujarati: 'કૃપા કરીને તમારી પસંદગીની ભાષા પસંદ કરો.',
+        Marathi: 'कृपया आपली पसंतीची भाषा निवडा.',
+        Tamil: 'தயவுசெய்து உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்.',
+        Bengali: 'অনুগ্রহ করে আপনার পছন্দের ভাষা নির্বাচন করুন।'
+      },
+      3: {
+        Hindi: 'डिजिटल व्यक्तिगत डेटा संरक्षण सहमति स्क्रीन।',
+        English: 'Digital Personal Data Protection Consent Screen.',
+        Gujarati: 'ડિજિટલ પર્સનલ ડેટા પ્રોટેક્શન સંમતિ સ્ક્રીન.',
+        Marathi: 'डिजिटल वैयक्तिक डेटा संरक्षण संमती स्क्रीन.',
+        Tamil: 'டிஜிட்டல் தனிநபர் தரவு பாதுகாப்பு ஒப்புதல் திரை.',
+        Bengali: 'ডিজিটাল ব্যক্তিগত ডেটা সুরক্ষা সম্মতি স্ক্রিন।'
+      },
+      5: {
+        Hindi: 'पूर्व मेडिकल पर्ची और जांच रिपोर्ट अपलोड स्क्रीन।',
+        English: 'Medical Document and Prescription Upload Screen.',
+        Gujarati: 'મેડિકલ દસ્તાવેજ અને પ્રિસ્ક્રિપ્શન અપલોડ સ્ક્રીન.',
+        Marathi: 'वैद्यकीय दस्तऐवज आणि प्रिस्क्रिप्शन अपलोड स्क्रीन.',
+        Tamil: 'மருத்துவ ஆவணங்கள் மற்றும் மருந்து சீட்டு பதிவேற்ற திரை.',
+        Bengali: 'মেডিকেল নথি এবং প্রেসক্রিপশন আপলোড স্ক্রিন।'
+      }
+    };
+
+    const currentLang = patientData.preferred_language || 'Hindi';
+    const msg = screenAnnouncements[patientData.current_step]?.[currentLang] || screenAnnouncements[patientData.current_step]?.['Hindi'];
+
+    if (!msg) return;
+
+    const t = setTimeout(() => {
+      speakPhrase(msg, currentLang);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [patientData.current_step, patientData.accessibility_mode, patientData.preferred_language]);
 
   // Render appropriate step
   const renderStepContent = () => {
@@ -75,7 +157,11 @@ export const KioskShell = () => {
       case 3:
         return <ConsentScreen />;
       case 4:
-        return <PatientHome />;
+        return <AiInterview />;
+      case 5:
+        return <DocumentUpload />;
+      case 6:
+        return <CaseSummaryToken />;
       default:
         return <PatientLogin />;
     }
@@ -89,271 +175,57 @@ export const KioskShell = () => {
   };
 
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 select-none relative font-sans ${getAccessibilityClasses()}`}>
-      
-      {/* Background Medical Ambient Glow & Grid Lines */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-cyan-600/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[350px] bg-teal-600/10 rounded-full blur-[140px]" />
-        <div 
-          className="absolute inset-0 opacity-[0.03]" 
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.8) 1px, transparent 0)`,
-            backgroundSize: '36px 36px'
-          }}
-        />
-      </div>
+    <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto select-none font-sans transition-colors duration-500 ${isLight ? 'text-slate-900' : 'text-slate-100'} ${getAccessibilityClasses()}`}>
+      {/* LAYER 1: CUSTOM KIOSK AMBIENT BACKGROUND VIDEO */}
+      <video
+        key="custom-kiosk-bg-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none -z-30 brightness-[0.85] contrast-[1.05]"
+        src="/bg-video.mp4"
+      />
 
-      {/* HEADER + STEPPER WRAPPER */}
-      <div className="flex-shrink-0 w-full z-10 pb-4">
-        {/* TOP HEADER */}
-        <header className="relative z-20 w-full bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-lg">
-          
-          {/* Left: Branding & Hospital Logo */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 p-2">
-              <HeartPulse className="w-7 h-7 text-slate-950 stroke-[2.5]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white m-0 p-0 leading-none">
-                  Medi<span className="text-cyan-400">Kiosk</span>
-                </h1>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-                  OPD-04
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium tracking-wide">
-                Ministry of Ayush • All India Institute of Ayurveda
-              </p>
-            </div>
-          </div>
+      {/* LAYER 2: DYNAMIC GLASS OVERLAY (MUST BE SEMI-TRANSPARENT, NEVER SOLID) */}
+      <div 
+        className={`fixed inset-0 pointer-events-none -z-20 transition-all duration-300 ${
+          theme === 'dark' 
+            ? 'bg-slate-950/70 backdrop-blur-[2px]' 
+            : 'bg-slate-900/10 bg-gradient-to-b from-white/35 via-transparent to-white/40 backdrop-blur-[1px]'
+        }`} 
+      />
 
-          {/* Center: Live Clock & Hospital Station info */}
-          <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/70 border border-slate-800 text-slate-300">
-            <Clock className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="font-mono text-sm font-semibold tracking-wider text-white">
-              {formattedTime}
-            </span>
-            <span className="text-slate-600">|</span>
-            <span className="text-xs text-slate-400 font-medium">
-              {formattedDate}
-            </span>
-          </div>
-
-          {/* Right: Quick Language & Accessibility Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            
-            {/* Language Selector Pill */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLangMenu(!showLangMenu);
-                  setShowAccessMenu(false);
-                }}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition cursor-pointer"
-              >
-                <Languages className="w-4 h-4 text-cyan-400" />
-                <span>{patientData.preferred_language}</span>
-              </button>
-
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-1.5 z-50">
-                  {['Hindi', 'English', 'Gujarati', 'Marathi', 'Bengali', 'Tamil'].map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        setLanguage(lang);
-                        setShowLangMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
-                        patientData.preferred_language === lang
-                          ? 'bg-cyan-500/20 text-cyan-300'
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <span>{lang}</span>
-                      {patientData.preferred_language === lang && <Check className="w-4 h-4 text-cyan-400" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Accessibility Switcher Pill */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAccessMenu(!showAccessMenu);
-                  setShowLangMenu(false);
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer ${
-                  patientData.accessibility_mode === 'large-text-high-contrast'
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : patientData.accessibility_mode === 'audio-guided'
-                    ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
-                    : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
-                }`}
-              >
-                {patientData.accessibility_mode === 'large-text-high-contrast' ? (
-                  <Eye className="w-4 h-4 text-amber-400" />
-                ) : patientData.accessibility_mode === 'audio-guided' ? (
-                  <Headphones className="w-4 h-4 text-purple-400" />
-                ) : (
-                  <SlidersHorizontal className="w-4 h-4 text-teal-400" />
-                )}
-                <span className="hidden sm:inline">
-                  {patientData.accessibility_mode === 'large-text-high-contrast'
-                    ? 'High Contrast'
-                    : patientData.accessibility_mode === 'audio-guided'
-                    ? 'Audio Guide'
-                    : 'Accessibility'}
-                </span>
-              </button>
-
-              {showAccessMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-1.5 z-50">
-                  {[
-                    { id: 'standard', label: 'Standard Mode', icon: SlidersHorizontal },
-                    { id: 'audio-guided', label: 'Audio-Guided Assistant', icon: Headphones },
-                    { id: 'large-text-high-contrast', label: 'High Contrast & Big Text', icon: Eye }
-                  ].map((mode) => {
-                    const IconComp = mode.icon;
-                    return (
-                      <button
-                        key={mode.id}
-                        onClick={() => {
-                          setAccessibilityMode(mode.id);
-                          setShowAccessMenu(false);
-                        }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition ${
-                          patientData.accessibility_mode === mode.id
-                            ? 'bg-teal-500/20 text-teal-300'
-                            : 'text-slate-300 hover:bg-slate-800'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComp className="w-4 h-4" />
-                          <span>{mode.label}</span>
-                        </div>
-                        {patientData.accessibility_mode === mode.id && <Check className="w-4 h-4 text-teal-400" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Reset Kiosk Button */}
-            <button
-              type="button"
-              onClick={resetSession}
-              title="Reset Kiosk Session"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/50 hover:text-rose-400 hover:border-rose-800/60 border border-slate-700 text-slate-400 transition cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-
-          </div>
-        </header>
-
-        {/* STEPPER PROGRESS BAR */}
-        <div className="relative z-10 w-full bg-slate-900/60 backdrop-blur-md border-b border-slate-800/60 py-3.5 px-4 sm:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-4 gap-2 sm:gap-4 relative">
-              
-              {steps.map((step) => {
-                const isCompleted = patientData.current_step > step.number;
-                const isCurrent = patientData.current_step === step.number;
-
-                return (
-                  <button
-                    key={step.number}
-                    type="button"
-                    onClick={() => {
-                      // Allow navigating to visited steps or step 1
-                      if (isCompleted || step.number <= patientData.current_step) {
-                        goToStep(step.number);
-                      }
-                    }}
-                    className={`group flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
-                      isCurrent
-                        ? 'bg-cyan-500/15 border border-cyan-500/40 shadow-md shadow-cyan-500/10'
-                        : isCompleted
-                        ? 'bg-slate-900/40 border border-teal-500/30 text-teal-300'
-                        : 'bg-slate-950/30 border border-slate-800/50 text-slate-500 opacity-60'
-                    }`}
-                  >
-                    {/* Step Number Circle */}
-                    <div
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 transition-all ${
-                        isCompleted
-                          ? 'bg-teal-500 text-slate-950 shadow-sm'
-                          : isCurrent
-                          ? 'bg-cyan-400 text-slate-950 ring-4 ring-cyan-500/20 font-black'
-                          : 'bg-slate-800 text-slate-400'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : step.number}
-                    </div>
-
-                    {/* Step Label */}
-                    <div className="truncate">
-                      <div className={`text-xs sm:text-sm font-bold truncate ${
-                        isCurrent ? 'text-white' : isCompleted ? 'text-teal-300' : 'text-slate-400'
-                      }`}>
-                        {step.title}
-                      </div>
-                      <div className="text-[10px] text-slate-500 hidden sm:block">
-                        {step.sub}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN CONTENT CONTAINER */}
-      <main className="relative z-10 flex-1 overflow-y-auto w-full px-6 py-4 mt-2 flex flex-col items-center">
-        <div className="w-full max-w-6xl mx-auto transition-all duration-300 ease-in-out">
-          {renderStepContent()}
-        </div>
-      </main>
-
-      {/* BOTTOM KIOSK FOOTER */}
-      <footer className="flex-shrink-0 relative z-20 w-full bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs text-slate-400">
-        
-        {/* Left: Compliance & Security Notice */}
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-teal-400" />
-          <span className="hidden sm:inline">DPDP Act 2023 & Ayushman Bharat (ABDM) Compliant Node</span>
-          <span className="sm:hidden">DPDP & ABDM Compliant</span>
-        </div>
-
-        {/* Center: Active Session Token Badge if generated */}
-        {patientData.token_number && (
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Active Token: {patientData.token_number}</span>
-          </div>
+      {/* FLOATING DARK / LIGHT MODE TOGGLE BUTTON */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className={`fixed top-4 right-4 z-50 p-2.5 sm:px-3.5 sm:py-2 rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xl flex items-center gap-2 ${
+          isLight
+            ? 'bg-white/90 hover:bg-slate-100 border-slate-300 text-amber-600 shadow-slate-400/20'
+            : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700 text-cyan-400 shadow-slate-950/60'
+        }`}
+        title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+      >
+        {isLight ? (
+          <>
+            <Moon className="w-5 h-5 text-amber-500 fill-amber-500" />
+            <span className="text-xs font-black text-slate-800 hidden sm:inline">Dark Mode</span>
+          </>
+        ) : (
+          <>
+            <Sun className="w-5 h-5 text-amber-400 fill-amber-400" />
+            <span className="text-xs font-black text-slate-200 hidden sm:inline">Light Mode</span>
+          </>
         )}
+      </button>
 
-        {/* Right: Hospital Staff Assistance */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <PhoneCall className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Staff Help: <strong>Desk 01 / Ext. 104</strong></span>
-          </div>
-        </div>
-
-      </footer>
-
+      {/* LAYER 3: ACTUAL KIOSK CONTENT (SCROLLABLE SINGLE VIEWPORT PAGE) */}
+      <div className="relative z-10 flex flex-col items-center justify-start min-h-screen w-full bg-transparent p-2 sm:p-4 overflow-y-auto">
+        <main className={`w-full ${patientData.current_step >= 4 ? 'max-w-4xl' : 'max-w-xl'} mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-2rem)] py-3 sm:py-6 transition-all duration-300 ease-in-out`}>
+          {renderStepContent()}
+        </main>
+      </div>
     </div>
   );
 };

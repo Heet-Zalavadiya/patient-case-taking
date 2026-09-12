@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "node run_frontends.js",
     "dev:patient": "npm --prefix frontend/patient run dev",
+    "dev:doctor": "npm --prefix frontend/doctor run dev",
     "build:patient": "npm --prefix frontend/patient run build",
-    "preview:patient": "npm --prefix frontend/patient run preview"
+    "build:doctor": "npm --prefix frontend/doctor run build",
+    "build": "npm --prefix frontend/patient run build && npm --prefix frontend/doctor run build"
   },
   "keywords": [
     "sih2026",
