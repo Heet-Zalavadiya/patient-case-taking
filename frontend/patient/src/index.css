@@ -25,18 +25,21 @@
   }
 
   html, body {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-behavior: smooth;
     color: #f8fafc;
     font-family: var(--font-sans);
     touch-action: manipulation;
   }
 
   #root {
-    height: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -53,23 +56,33 @@
   font-size: 1.15rem;
 }
 
-/* Custom Scrollbar for touch kiosk */
+/* Custom Sleek Scrollbar for Touch Kiosk & Screen Viewports */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.3);
+  background: linear-gradient(180deg, #38bdf8 0%, #06b6d4 100%);
   border-radius: 9999px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.6);
+  background: linear-gradient(180deg, #0ea5e9 0%, #0891b2 100%);
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0284c7 0%, #0891b2 100%);
+  border: 2px solid #ffffff;
 }
 
 /* Pulse Glow Keyframes */

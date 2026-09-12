@@ -1,7 +1,7 @@
 # AI Module — MediKiosk (Member 4)
 
 MediKiosk's conversational clinical history-taking engine, powered by Google Gemini (`gemini-3.5-flash-lite`). It conducts a multi-turn, adaptive patient intake interview using the clinical **SOCRATES** framework, performs Ayurvedic **Dashavidha Pariksha** (when in AYUSH mode), detects acute red-flag emergencies via Gemini function calling with deterministic clinical safety heuristics, and generates physician-ready bilingual summaries (English and Hindi).
-
+  
 ---
 
 ## 1. Setup & Environment

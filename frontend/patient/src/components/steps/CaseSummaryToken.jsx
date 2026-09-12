@@ -23,7 +23,10 @@ import {
   Play, 
   Share2, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ScanLine,
+  Pill,
+  FileCheck2
 } from 'lucide-react';
 
 export const CaseSummaryToken = () => {
@@ -104,11 +107,18 @@ export const CaseSummaryToken = () => {
   useEffect(() => {
     const triggerSummary = async () => {
       const activeSessionId = patientData.session_id || 1;
+      const docSummaries = (patientData.uploaded_documents || []).map(d => ({
+        type: d.document_type,
+        ocr_text: d.ocr_text || d.ocr_raw_text,
+        medications: d.extracted_medications || d.medications || []
+      }));
       try {
         await generateClinicalSummary(activeSessionId, {
           chief_complaint: chiefComplaint,
           history_mode: patientData.history_mode,
-          turns_count: turns.length
+          turns_count: turns.length,
+          documents_count: uploadedDocs.length,
+          document_summaries: docSummaries
         });
       } catch (err) {
         console.warn('Clinical summary trigger notice:', err);
@@ -125,7 +135,7 @@ export const CaseSummaryToken = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center">
+    <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center pb-6">
       {/* 1. TOP HEADER & DPDP RESET BAR (WITH HIGH CONTRAST GLASS BACKDROP) */}
       <div className="mb-3 text-center">
         <div className={`inline-block px-5 py-2.5 rounded-2xl border-2 backdrop-blur-md shadow-lg transition-all ${
@@ -284,8 +294,8 @@ export const CaseSummaryToken = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: Intake Summary & Doctor Transmission Status (lg:col-span-7) */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-2">
+        {/* RIGHT COLUMN: Intake Summary, OCR Document Summary & Doctor Transmission Status (lg:col-span-7) */}
+        <div className="lg:col-span-7 flex flex-col justify-between space-y-2.5">
           
           {/* Clinical Transmission Status Card */}
           <div
@@ -363,6 +373,136 @@ export const CaseSummaryToken = () => {
               </div>
 
             </div>
+          </div>
+
+          {/* NEW: OCR & ATTACHED MEDICAL DOCUMENT SUMMARY CARD */}
+          <div
+            className={`rounded-2xl p-3.5 sm:p-4 border backdrop-blur-md shadow-md ${
+              isLight
+                ? 'bg-white/95 border-teal-300 text-slate-900'
+                : 'bg-slate-900/90 border-teal-500/40 text-white'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-slate-950 shadow-sm shrink-0">
+                  <ScanLine className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black leading-tight">
+                    OCR & Medical Document Summary / दस्तावेज़ सारांश
+                  </h4>
+                  <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Digitized OCR extraction summary attached to queue token
+                  </p>
+                </div>
+              </div>
+
+              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
+                uploadedDocs.length > 0
+                  ? isLight ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-teal-950/60 border-teal-700 text-teal-300'
+                  : isLight ? 'bg-slate-100 border-slate-300 text-slate-700' : 'bg-slate-800 border-slate-700 text-slate-300'
+              }`}>
+                <FileCheck2 className="w-3 h-3 text-teal-500 shrink-0" />
+                <span>{uploadedDocs.length > 0 ? `${uploadedDocs.length} Record(s)` : '0 Scanned'}</span>
+              </span>
+            </div>
+
+            {uploadedDocs.length > 0 ? (
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {uploadedDocs.map((doc, index) => {
+                  const isPrescription = doc.document_type === 'prescription';
+                  const isLab = doc.document_type === 'lab_report';
+                  const docLabel = isPrescription
+                    ? 'Prescription'
+                    : isLab
+                    ? 'Lab Report'
+                    : 'Discharge Summary';
+
+                  const meds = doc.extracted_medications || doc.medications || [];
+                  const rawOcr = doc.ocr_text || doc.ocr_raw_text || 'OCR text successfully extracted and verified.';
+
+                  return (
+                    <div
+                      key={doc.id || doc.document_id || index}
+                      className={`p-2.5 rounded-xl border text-left transition ${
+                        isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+                      }`}
+                    >
+                      {/* Header info for each document */}
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                        <div className="flex items-center gap-1.5">
+                          {isPrescription ? (
+                            <Stethoscope className="w-4 h-4 text-cyan-500 shrink-0" />
+                          ) : isLab ? (
+                            <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                          ) : (
+                            <FileCheck2 className="w-4 h-4 text-amber-500 shrink-0" />
+                          )}
+                          <span className={`text-xs font-black truncate max-w-[180px] ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {doc.name || `Document #${index + 1}`}
+                          </span>
+                          <span className={`text-[9px] font-bold px-2 py-0.2 rounded border uppercase ${
+                            isLight ? 'bg-white border-slate-300 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
+                          }`}>
+                            {docLabel}
+                          </span>
+                        </div>
+
+                        <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Digitized</span>
+                        </span>
+                      </div>
+
+                      {/* OCR Summary Text Box */}
+                      <div className={`p-2 rounded-lg border text-xs leading-relaxed mb-1.5 font-medium ${
+                        isLight ? 'bg-white border-teal-200 text-slate-800' : 'bg-slate-900 border-teal-900/60 text-slate-200'
+                      }`}>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 mb-0.5 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          <span>Extracted OCR Findings:</span>
+                        </div>
+                        <p>{rawOcr}</p>
+                      </div>
+
+                      {/* Extracted Medications / Key Test Chips */}
+                      {meds.length > 0 && (
+                        <div>
+                          <div className={`text-[9px] font-bold uppercase tracking-wider mb-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            Extracted Medications / Test Findings ({meds.length}):
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {meds.map((med, mIdx) => (
+                              <span
+                                key={mIdx}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${
+                                  isLight
+                                    ? 'bg-cyan-50 border-cyan-200 text-cyan-950'
+                                    : 'bg-cyan-950/60 border-cyan-800 text-cyan-200'
+                                }`}
+                              >
+                                <Pill className="w-3 h-3 text-cyan-500 shrink-0" />
+                                <span>{med}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Fallback if no documents were attached */
+              <div className={`p-2.5 rounded-xl border text-center ${
+                isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-950/60 border-slate-800 text-slate-300'
+              }`}>
+                <p className="text-xs font-semibold">
+                  No medical prescriptions attached. Case summary compiled directly from AI intake responses.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Complete & Reset Session Card */}

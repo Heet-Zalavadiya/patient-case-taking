@@ -57,11 +57,14 @@ def health_check():
 # ── Include routers ────────────────────────────────────────────────────────────
 from routers.patients import router as patients_router
 from routers.clinical import router as clinical_router
-from routers.doctors import router as doctor_router   # doctors.py (plural)
+from routers.doctors import router as doctor_router
 
+# Mount all routers under /api/v1 AND root for complete Doctor & Patient frontend compatibility
+app.include_router(patients_router, prefix="/api/v1")
 app.include_router(patients_router)
+
+app.include_router(clinical_router, prefix="/api/v1")
 app.include_router(clinical_router)
 
-# Mount Doctor Console endpoints under /api/v1 and also at root for backward compat
 app.include_router(doctor_router, prefix="/api/v1")
 app.include_router(doctor_router)

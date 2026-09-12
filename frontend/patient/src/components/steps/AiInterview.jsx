@@ -586,7 +586,7 @@ export const AiInterview = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 flex flex-col justify-center">
+    <div className="w-full max-w-4xl mx-auto px-1 sm:px-2 pb-8 flex flex-col justify-center">
       
       {/* 1. TOP HEADER & TRIAGE MODE SWITCHER (WITH HIGH CONTRAST GLASS BACKDROP) */}
       <div className="mb-3 text-center">

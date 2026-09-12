@@ -175,7 +175,7 @@ export const KioskShell = () => {
   };
 
   return (
-    <div className={`relative min-h-screen w-full overflow-hidden select-none font-sans transition-colors duration-500 ${isLight ? 'text-slate-900' : 'text-slate-100'} ${getAccessibilityClasses()}`}>
+    <div className={`relative min-h-screen w-full overflow-x-hidden overflow-y-auto select-none font-sans transition-colors duration-500 ${isLight ? 'text-slate-900' : 'text-slate-100'} ${getAccessibilityClasses()}`}>
       {/* LAYER 1: CUSTOM KIOSK AMBIENT BACKGROUND VIDEO */}
       <video
         key="custom-kiosk-bg-video"
@@ -220,9 +220,9 @@ export const KioskShell = () => {
         )}
       </button>
 
-      {/* LAYER 3: ACTUAL KIOSK CONTENT (COMPACT SINGLE VIEWPORT PAGE) */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-screen w-full max-h-screen bg-transparent p-2 sm:p-3 overflow-hidden">
-        <main className={`w-full ${patientData.current_step >= 4 ? 'max-w-4xl' : 'max-w-xl'} mx-auto flex flex-col items-center justify-center h-full max-h-full overflow-hidden transition-all duration-300 ease-in-out`}>
+      {/* LAYER 3: ACTUAL KIOSK CONTENT (SCROLLABLE SINGLE VIEWPORT PAGE) */}
+      <div className="relative z-10 flex flex-col items-center justify-start min-h-screen w-full bg-transparent p-2 sm:p-4 overflow-y-auto">
+        <main className={`w-full ${patientData.current_step >= 4 ? 'max-w-4xl' : 'max-w-xl'} mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-2rem)] py-3 sm:py-6 transition-all duration-300 ease-in-out`}>
           {renderStepContent()}
         </main>
       </div>
