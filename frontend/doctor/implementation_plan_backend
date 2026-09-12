@@ -1,0 +1,128 @@
+# MediKiosk Doctor Dashboard & FastAPI End-to-End Integration Plan
+
+Integrate the MediKiosk Doctor Dashboard React application with the FastAPI backend. This replaces Day 1 mock static datasets with an asynchronous, production-ready REST API layer featuring Pydantic v2 validation, JWT authentication, dynamic CORS handling, custom React hooks, optimistic updates, and resilient error boundaries.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **Database Fallback Support**: To ensure the backend runs smoothly regardless of whether a local Microsoft SQL Server instance has the `medikiosk` database created, the database connection layer will be enhanced to support a resilient fallback (SQLite or configured connection string) and auto-seed initial clinical queue data if empty.
+> - **Axios Package**: We will install `axios` in `frontend/doctor` to power the API client interceptors.
+> - **Token Storage**: Authentication JWTs received from `POST /api/v1/auth/login` will be stored in `localStorage` under `medikiosk_token` and automatically injected as `Authorization: Bearer <token>` via Axios request interceptors.
+
+---
+
+## Proposed Changes
+
+### Backend Component (FastAPI & Pydantic v2)
+
+#### [NEW] [schemas.py](file:///d:/sih/patient-case-taking/backend/schemas.py)
+- Pydantic v2 models with `from_attributes = True` configuration:
+  - **Auth**: `LoginRequest` (`login_id`, `password`), `LoginResponse` (`access_token`, `token_type`, `doctor_id`, `full_name`, `is_ayush_practitioner`, `department`, `active_opd_room`).
+  - **Patient Queue**: `PatientQueueItem` (`patient_id`, `full_name`, `age`, `gender`, `session_id`, `has_red_flags`, `history_mode`, `token`, `mrn`, `check_in_time`, `status`, `blood_group`, `phone`, `vitals_summary`, `triage_category`).
+  - **History**: `StructuredHistoryDetail` (`chief_complaint`, `hpi_associated_symptoms`, `past_medical`, `drug_allergies`, `ros`, etc.), `AyushHistoryDetail` (NAMASTE / Prakriti metrics), and composite `PatientHistoryResponse`.
+  - **Alerts & Labs**: `RedFlagAlertItem` (`alert_id`, `session_id`, `flag_description`, `severity`, `is_acknowledged`, `timestamp`, `vital_triggers`, `action_protocol`), `AlertAcknowledgeRequest` (`is_acknowledged`).
+  - **Lab Results**: `LabValueItem` (`lab_id`, `test_name`, `value`, `unit`, `reference_range`, `is_abnormal`, `flag`).
+  - **Clinical Summary**: `ClinicalSummaryResponse` (`summary_id`, `session_id`, `patient_id`, `status`, `draft_text`, `physician_notes`, `last_modified_by`, `generated_at`), `SummaryStatusUpdateRequest` (`status`: Literal['ACCEPTED', 'AMENDED', 'REJECTED'], `amended_text`: Optional[str], `physician_notes`: Optional[str]).
+
+#### [NEW] [routes/doctor.py](file:///d:/sih/patient-case-taking/backend/routes/doctor.py) (and [routers/doctor.py](file:///d:/sih/patient-case-taking/backend/routers/doctor.py))
+- Async FastAPI endpoint handlers:
+  1. `POST /api/v1/auth/login`: Authenticates doctor credentials, produces a signed JWT session token.
+  2. `GET /api/v1/patients`: Queries active OPD patients, resolving latest `ClinicalSession` and active unacknowledged red flags.
+  3. `GET /api/v1/patients/{patient_id}/history`: Returns `structured_history` and optional `ayush_history` if `history_mode == 'ayush'`.
+  4. `GET /api/v1/sessions/{session_id}/red-flags`: Returns all active triage alerts for the session.
+  5. `PATCH /api/v1/alerts/{alert_id}/acknowledge`: Updates `is_acknowledged` status to `True`, records timestamp.
+  6. `GET /api/v1/sessions/{session_id}/lab-values`: Returns extracted lab results formatted with `is_abnormal` (1 or 0).
+  7. `GET /api/v1/sessions/{session_id}/summary`: Returns synthesized AI intake draft for the session.
+  8. `PATCH /api/v1/sessions/{session_id}/summary`: Updates status to `ACCEPTED`, `AMENDED`, or `REJECTED`, persisting amendments and doctor notes.
+
+#### [MODIFY] [backend/database/connection.py](file:///d:/sih/patient-case-taking/backend/database/connection.py)
+- Support connection URL fallback (SQLite `sqlite:///./medikiosk.db`) so testing/development works reliably even if SQL Server is not initialized.
+
+#### [NEW] [backend/database/seed_data.py](file:///d:/sih/patient-case-taking/backend/database/seed_data.py)
+- Auto-seed clinical dataset (doctors, 5 patients with active sessions, red flag alerts, extracted lab results, draft summaries) if tables are empty.
+
+#### [MODIFY] [backend/main.py](file:///d:/sih/patient-case-taking/backend/main.py)
+- Configure `CORSMiddleware` with origins `http://localhost:5174`, `http://localhost:5173`, `http://localhost:3000`, `http://127.0.0.1:5174`.
+- Mount `doctor.py` router under `/api/v1` and auto-seed initial data on startup.
+
+---
+
+### Frontend Component (React & Tailwind CSS)
+
+#### [NEW] [src/services/apiClient.js](file:///d:/sih/patient-case-taking/frontend/doctor/src/services/apiClient.js)
+- Axios client configured with `baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'`.
+- Request interceptor: Automatically extracts JWT token from `localStorage` and appends `Authorization: Bearer <token>`.
+- Response interceptor: Normalizes standard error formats (`401 Unauthorized`, `404 Not Found`, `422 Validation Error`).
+- Resilient fallback wrapper for zero-crash degradation.
+
+#### [NEW] [src/api.js](file:///d:/sih/patient-case-taking/frontend/doctor/src/api.js)
+- Centralized HTTP functions matching each FastAPI endpoint:
+  - `loginDoctor(credentials)`
+  - `fetchPatientsQueue()`
+  - `fetchPatientHistory(patientId)`
+  - `fetchSessionRedFlags(sessionId)`
+  - `acknowledgeAlert(alertId, isAcknowledged)`
+  - `fetchSessionLabValues(sessionId)`
+  - `fetchSessionSummary(sessionId)`
+  - `updateSessionSummary(sessionId, { status, amended_text, physician_notes })`
+
+#### [NEW] [src/hooks/usePatientQueue.js](file:///d:/sih/patient-case-taking/frontend/doctor/src/hooks/usePatientQueue.js)
+- Custom React hook managing queue state:
+  - `patients`, `isLoading`, `error`, `isLiveApi`, `searchQuery`, `activeFilter`, `filteredPatients`, `counts`.
+  - `refetch()`, `retry()`, and search/filter mutators.
+
+#### [NEW] [src/hooks/usePatientDetails.js](file:///d:/sih/patient-case-taking/frontend/doctor/src/hooks/usePatientDetails.js)
+- Custom React hook managing patient clinical details:
+  - `history`, `labValues`, `alerts`, `summary`, `isLoading`, `isLiveApi`, `error`.
+  - Optimistic updates for `acknowledgeAlert`, `verifySummary`, `amendSummary`, `rejectSummary`.
+
+#### [MODIFY] [src/apiService.js](file:///d:/sih/patient-case-taking/frontend/doctor/src/apiService.js)
+- Updated to route all calls through `src/api.js` while maintaining backward-compatible function signatures.
+
+#### [MODIFY] [src/components/PatientListPage.jsx](file:///d:/sih/patient-case-taking/frontend/doctor/src/components/PatientListPage.jsx)
+- Integrated with `usePatientQueue` hook.
+- Added animated loading skeletons matching the patient queue cards.
+- Added connection error banner with a prominent "Retry Connection" action.
+- Live API indicator vs. offline fallback badge.
+
+#### [MODIFY] [src/components/PatientDetailPage.jsx](file:///d:/sih/patient-case-taking/frontend/doctor/src/components/PatientDetailPage.jsx)
+- Integrated with `usePatientDetails` hook.
+- Added loading skeletons for Case Sheet, Lab Results, and AI Summary cards.
+- Optimistic red-flag acknowledgment and summary verification (`ACCEPTED`, `AMENDED`, `REJECTED`).
+- Highlighting `is_abnormal === 1` lab values with explicit red styling (`bg-red-50 text-red-700 border-red-200` with dark mode support).
+
+#### [MODIFY] [src/components/LoginPage.jsx](file:///d:/sih/patient-case-taking/frontend/doctor/src/components/LoginPage.jsx) & [src/App.jsx](file:///d:/sih/patient-case-taking/frontend/doctor/src/App.jsx)
+- Connect live login submission to `loginDoctor()` API call, storing the returned JWT in `localStorage` on success and handling auth errors cleanly.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Python syntax & endpoint verification:
+  ```powershell
+  python -m py_compile backend/schemas.py backend/routes/doctor.py backend/main.py
+  ```
+- Backend endpoint smoke tests using a Python test script hitting:
+  - `POST /api/v1/auth/login`
+  - `GET /api/v1/patients`
+  - `GET /api/v1/patients/{patient_id}/history`
+  - `GET /api/v1/sessions/{session_id}/red-flags`
+  - `PATCH /api/v1/alerts/{alert_id}/acknowledge`
+  - `GET /api/v1/sessions/{session_id}/lab-values`
+  - `GET /api/v1/sessions/{session_id}/summary`
+  - `PATCH /api/v1/sessions/{session_id}/summary`
+- Frontend build validation:
+  ```powershell
+  cd frontend/doctor && npm run build
+  ```
+
+### Manual Verification
+- Start FastAPI dev server on port 8000.
+- Verify live login with `dr.anand` / `Doctor@123`.
+- Verify patient queue shows live patients with real-time triage tags.
+- Navigate to patient detail, acknowledge a high-severity red-flag alert, observe instant optimistic update.
+- Verify abnormal lab results are styled with red border/background.
+- Edit/amend AI summary draft, verify patch call succeeds and status updates to `AMENDED`.

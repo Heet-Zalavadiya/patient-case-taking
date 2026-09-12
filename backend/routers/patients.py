@@ -21,6 +21,7 @@ from models.clinical_session import ClinicalSession
 from models.structured_history import StructuredHistory
 from schemas.clinical import (
     ClinicalSummaryResponse,
+    ExtractedLabValueResponse,
     MedicalDocumentDetailResponse,
     SessionResponse,
     StructuredHistoryResponse,
@@ -47,11 +48,13 @@ def list_patients(db: Session = Depends(get_db)):
 @router.post("", response_model=PatientResponse, status_code=201)
 @router.post("/", response_model=PatientResponse, status_code=201, include_in_schema=False)
 def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
-    # Check if login_id already exists
+    # Check if login_id already exists (Register or Login behavior)
     if patient_data.login_id:
         existing = db.query(Patient).filter(Patient.login_id == patient_data.login_id).first()
         if existing:
-            raise HTTPException(status_code=400, detail="login_id already registered")
+            return existing
+
+    pw_hash = patient_data.password_hash or (hash_password(patient_data.password) if patient_data.password else None)
 
     new_patient = Patient(
         full_name           = patient_data.full_name,
@@ -197,3 +200,18 @@ def get_patient_documents(patient_id: int, db: Session = Depends(get_db)):
         result.append(doc_dict)
 
     return result
+
+
+@router.get("/{patient_id}/labs", response_model=List[ExtractedLabValueResponse])
+def get_patient_lab_values(patient_id: int, db: Session = Depends(get_db)):
+    """Get all extracted lab values for a patient (used for Doctor Dashboard lab table)."""
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    return (
+        db.query(DocumentExtractedLabValue)
+        .join(MedicalDocument, DocumentExtractedLabValue.document_id == MedicalDocument.document_id)
+        .filter(MedicalDocument.patient_id == patient_id)
+        .all()
+    )

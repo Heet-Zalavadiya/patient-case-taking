@@ -13,5 +13,4 @@ from .audit_log import AuditLog
 from .document_extraction import (
     DocumentExtractedMedication,
     DocumentExtractedLabValue,
-    DocumentExtractedCondition,
-)
+    DocumentExtractedCondition,)

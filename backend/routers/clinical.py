@@ -1,6 +1,9 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
+import logging
+
+logger = logging.getLogger("uvicorn")
 
 from database.connection import get_db
 from models.abdm_sync_log import AbdmSyncLog
@@ -18,7 +21,7 @@ from models.medical_document import MedicalDocument
 from models.patient import Patient
 from models.red_flag_alert import RedFlagAlert
 from models.structured_history import StructuredHistory
-from schemas.clinical import (
+from schemas.clinical import (   
     AbdmSyncLogCreate,
     AbdmSyncLogResponse,
     AuditLogCreate,
@@ -46,6 +49,7 @@ from schemas.clinical import (
     StructuredHistoryResponse,
     SummaryStatusUpdate,
 )
+from services.ocr_bridge import run_ocr, is_ocr_available
 
 router = APIRouter(tags=["Clinical"])
 
@@ -167,19 +171,133 @@ def create_red_flag(
     return alert
 
 
-@router.post("/documents", response_model=MedicalDocumentResponse)
-def create_document(document_data: MedicalDocumentCreate, db: Session = Depends(get_db)):
-    get_patient_or_404(document_data.patient_id, db)
-    if document_data.session_id is not None:
-        session = get_session_or_404(document_data.session_id, db)
-        if session.patient_id != document_data.patient_id:
-            raise HTTPException(status_code=400, detail="Session does not belong to patient")
+@router.get("/alerts", response_model=List[RedFlagResponse])
+@router.get("/red-flags", response_model=List[RedFlagResponse], include_in_schema=False)
+def list_red_flag_alerts(db: Session = Depends(get_db)):
+    """List all triggered red-flag alerts (used for Doctor Dashboard alerts counter)."""
+    return db.query(RedFlagAlert).order_by(RedFlagAlert.triggered_at.desc()).all()
 
-    document = MedicalDocument(**document_data.model_dump())
-    db.add(document)
-    db.commit()
-    db.refresh(document)
-    return document
+
+@router.post("/documents", response_model=MedicalDocumentResponse)
+async def create_document(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a medical document (prescription / lab report / discharge summary).
+
+    Accepts two content-type modes:
+    • multipart/form-data  — file upload from the kiosk scanner / frontend
+    • application/json     — pre-processed metadata without a file
+
+    When a file is provided, the OCR pipeline is called in-process via ocr_bridge.
+    Extracted medications, lab values, and conditions are persisted automatically.
+    If the OCR pipeline is unavailable the document is saved with status='pending'.
+    """
+    content_type = request.headers.get("content-type", "")
+
+    if "multipart/form-data" in content_type:
+        # ── Parse form fields ─────────────────────────────────────────────────
+        form = await request.form()
+        patient_id = int(form.get("patient_id", 1))
+        session_id_raw = form.get("session_id")
+        session_id = int(session_id_raw) if session_id_raw and str(session_id_raw).isdigit() else None
+        doc_type = form.get("document_type", "prescription")
+        file_obj = form.get("file")
+        filename = getattr(file_obj, "filename", "scanned_doc.jpg") or "scanned_doc.jpg"
+        file_path = f"/uploads/documents/{filename}"
+
+        # ── Validate patient / session ────────────────────────────────────────
+        get_patient_or_404(patient_id, db)
+        if session_id is not None:
+            session = get_session_or_404(session_id, db)
+            if session.patient_id != patient_id:
+                raise HTTPException(status_code=400, detail="Session does not belong to patient")
+
+        # ── Run OCR bridge ────────────────────────────────────────────────────
+        ocr_result = {"status": "pending", "raw_ocr_text": "",
+                      "medications": [], "lab_values": [], "conditions": [],
+                      "document_type": doc_type, "document_date": None}
+
+        if file_obj is not None:
+            try:
+                image_bytes = await file_obj.read()
+                if image_bytes:
+                    ocr_result = run_ocr(image_bytes)
+                    # Use the OCR-detected document type if we got one
+                    if ocr_result.get("document_type") not in (None, "unknown", ""):
+                        doc_type = ocr_result["document_type"]
+                    logger.info(
+                        f"[OCR] document_type={doc_type} "
+                        f"status={ocr_result.get('status')} "
+                        f"meds={len(ocr_result.get('medications', []))}"
+                    )
+            except Exception as e:
+                logger.exception(f"[OCR] Failed to read uploaded file: {e}")
+
+        # ── Save document record ──────────────────────────────────────────────
+        document = MedicalDocument(
+            patient_id=patient_id,
+            session_id=session_id,
+            document_type=doc_type,
+            file_path=file_path,
+            ocr_status=ocr_result.get("status", "pending"),
+            ocr_raw_text=ocr_result.get("raw_ocr_text") or None,
+            ocr_language="en",
+        )
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+
+        # ── Persist extracted medications ─────────────────────────────────────
+        for med in ocr_result.get("medications", []):
+            db.add(DocumentExtractedMedication(
+                document_id=document.document_id,
+                medicine_name=med.get("medicine_name", ""),
+                dosage=med.get("dosage"),
+                frequency=med.get("frequency"),
+                duration=med.get("duration"),
+            ))
+
+        # ── Persist extracted lab values ──────────────────────────────────────
+        for lab in ocr_result.get("lab_values", []):
+            db.add(DocumentExtractedLabValue(
+                document_id=document.document_id,
+                test_name=lab.get("test_name", ""),
+                result_value=lab.get("result_value"),
+                unit=lab.get("unit"),
+                reference_range=lab.get("reference_range"),
+                is_abnormal=bool(lab.get("is_abnormal", False)),
+            ))
+
+        # ── Persist extracted conditions / diagnoses ───────────────────────────
+        for cond in ocr_result.get("conditions", []):
+            db.add(DocumentExtractedCondition(
+                document_id=document.document_id,
+                entity_type=cond.get("entity_type", "diagnosis"),
+                description=cond.get("description", ""),
+                entity_date=cond.get("entity_date"),
+            ))
+
+        db.commit()
+        db.refresh(document)
+        return document
+
+    else:
+        # ── JSON body path (pre-processed / metadata-only) ────────────────────
+        body = await request.json()
+        doc_data = MedicalDocumentCreate(**body)
+        get_patient_or_404(doc_data.patient_id, db)
+        if doc_data.session_id is not None:
+            session = get_session_or_404(doc_data.session_id, db)
+            if session.patient_id != doc_data.patient_id:
+                raise HTTPException(status_code=400, detail="Session does not belong to patient")
+
+        document = MedicalDocument(**doc_data.model_dump())
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+        return document
 
 
 # ── Day 3 Endpoints ───────────────────────────────────────────────────────────
@@ -187,19 +305,29 @@ def create_document(document_data: MedicalDocumentCreate, db: Session = Depends(
 @router.post("/sessions/{session_id}/summary", response_model=ClinicalSummaryResponse)
 def create_clinical_summary(
     session_id: int,
-    summary_data: ClinicalSummaryCreate,
+    summary_data: Optional[ClinicalSummaryCreate] = None,
     db: Session = Depends(get_db),
 ):
     session = get_session_or_404(session_id, db)
-    if session.patient_id != summary_data.patient_id:
-        raise HTTPException(status_code=400, detail="Session patient_id does not match summary patient_id")
+    patient_id = summary_data.patient_id if (summary_data and summary_data.patient_id) else session.patient_id
+    summary_text_english = (
+        summary_data.summary_text_english
+        if (summary_data and summary_data.summary_text_english)
+        else "Draft clinical summary generated from patient interview."
+    )
+    summary_text_local = (
+        summary_data.summary_text_local_language
+        if (summary_data and summary_data.summary_text_local_language)
+        else "रोगी साक्षात्कार से तैयार नैदानिक सारांश।"
+    )
+    status = summary_data.status if (summary_data and summary_data.status) else "draft"
 
     summary = ClinicalSummary(
         session_id=session_id,
-        patient_id=summary_data.patient_id,
-        summary_text_english=summary_data.summary_text_english,
-        summary_text_local_language=summary_data.summary_text_local_language,
-        status=summary_data.status,
+        patient_id=patient_id,
+        summary_text_english=summary_text_english,
+        summary_text_local_language=summary_text_local,
+        status=status,
     )
     db.add(summary)
     db.commit()
