@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePatient } from '../../context/PatientContext';
 import { 
+  apiCreateSession,
+  apiLogTurn,
+  apiTriggerRedFlag,
+  apiGenerateSummary,
   createClinicalSession, 
   saveInterviewTurn, 
   triggerRedFlag,
@@ -81,7 +85,7 @@ export const AiInterview = () => {
     const initSession = async () => {
       if (!patientData.session_id) {
         try {
-          const res = await createClinicalSession(
+          const res = await apiCreateSession(
             patientData.patient_id || 1,
             patientData.history_mode || 'allopathic'
           );
@@ -410,15 +414,15 @@ export const AiInterview = () => {
 
     try {
       const summaryPayload = {
-        chief_complaint: chiefComplaint,
-        history_mode: patientData.history_mode || 'allopathic',
-        turns_count: turns.length,
+        patient_id: patientData.patient_id || 1,
+        summary_text_english: `Patient Intake Summary: Chief complaint of "${chiefComplaint}". Total ${turns.length} consultation turns recorded.`,
+        summary_text_local_language: `रोगी इनटेक सारांश: मुख्य शिकायत "${chiefComplaint}"। कुल ${turns.length} परामर्श संवाद रिकॉर्ड किए गए।`,
         status: 'draft'
       };
 
-      const result = await generateClinicalSummary(activeSessionId, summaryPayload);
+      const result = await apiGenerateSummary(activeSessionId, summaryPayload);
       
-      const summaryId = result?.summary_id || result?.history_id || result?.summary?.id || 1;
+      const summaryId = result?.summary_id || result?.history_id || 1;
       const summaryData = result?.summary || result || {};
 
       // Update PatientContext state
@@ -432,7 +436,7 @@ export const AiInterview = () => {
       setSummaryData(1, { chief_complaint: chiefComplaint, status: 'draft' });
     } finally {
       setIsGeneratingSummary(false);
-      // Smoothly advance to Step 5 (Document Upload)
+      // Advance to Step 5 (DocumentUpload)
       goToStep(5);
     }
   };
@@ -459,9 +463,9 @@ export const AiInterview = () => {
     // 1. Add to context
     addInterviewTurn(turnPayload);
 
-    // 2. Call backend API
+    // 2. Call backend API (asynchronously log turn)
     try {
-      await saveInterviewTurn(sessionId, turnPayload);
+      await apiLogTurn(sessionId, turnPayload);
       showToast(`Turn ${turnNumber} logged to clinical_sessions`, 'turn');
     } catch (err) {
       console.warn('Turn save fallback:', err);
@@ -475,7 +479,7 @@ export const AiInterview = () => {
         severity: 'HIGH'
       };
       try {
-        await triggerRedFlag(sessionId, flagData);
+        await apiTriggerRedFlag(sessionId, flagData);
       } catch (err) {
         console.warn('Red flag fallback:', err);
       }

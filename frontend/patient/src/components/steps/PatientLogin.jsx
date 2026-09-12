@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { usePatient } from '../../context/PatientContext';
-import { loginOrRegisterPatient } from '../../services/api';
+import { apiRegisterOrLoginPatient, loginOrRegisterPatient } from '../../services/api';
 import { loginPatient as mockLoginPatient } from '../../services/mockApi';
 import { 
   User, 
@@ -78,21 +78,24 @@ export const PatientLogin = () => {
     setErrorMsg('');
 
     try {
-      const response = await loginOrRegisterPatient({
+      const payload = {
         login_id: profile.login_id,
-        password: 'password123',
+        password_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
         full_name: profile.full_name,
         preferred_language: patientData.preferred_language || 'Hindi',
-        accessibility_mode: patientData.accessibility_mode || 'standard'
-      });
+        accessibility_mode: patientData.accessibility_mode || 'standard',
+        age: profile.age,
+        gender: profile.gender
+      };
 
-      const patientObj = response.patient || response;
+      const response = await apiRegisterOrLoginPatient(payload);
+      const patientId = response?.patient_id || response?.patient?.patient_id || profile.fallback_id || 1;
+      const fullName = response?.full_name || response?.patient?.full_name || profile.full_name;
 
       updatePatient({
-        patient_id: response.patient_id || patientObj.patient_id || profile.fallback_id || 1,
+        patient_id: patientId,
         login_id: profile.login_id,
-        password: 'password123',
-        full_name: profile.full_name,
+        full_name: fullName,
         age: profile.age,
         gender: profile.gender,
         demo_chief_complaint: profile.demo_chief_complaint,
@@ -105,11 +108,10 @@ export const PatientLogin = () => {
       // Automatically advance to Step 2 (Language Selection)
       nextStep();
     } catch (err) {
-      console.warn('Demo profile login note:', err.message);
+      console.warn('Demo profile login offline fallback:', err.message);
       updatePatient({
         patient_id: profile.fallback_id || 1,
         login_id: profile.login_id,
-        password: 'password123',
         full_name: profile.full_name,
         age: profile.age,
         gender: profile.gender,
@@ -133,7 +135,7 @@ export const PatientLogin = () => {
     setErrorMsg('');
 
     try {
-      const response = await loginOrRegisterPatient({
+      const response = await apiRegisterOrLoginPatient({
         login_id: loginId.trim(),
         password: password || '123',
         full_name: `Patient (${loginId.slice(-4)})`,
@@ -142,11 +144,13 @@ export const PatientLogin = () => {
       });
       if (response && (response.success || response.patient_id)) {
         const patientObj = response.patient || response;
+        const assignedPatientId = response.patient_id || patientObj.patient_id || 1;
+        const assignedFullName = response.full_name || patientObj.full_name || `Patient (${loginId.slice(-4)})`;
+
         updatePatient({
-          patient_id: response.patient_id || patientObj.patient_id || 1,
+          patient_id: assignedPatientId,
           login_id: patientObj.login_id || loginId.trim(),
-          password: password || '123',
-          full_name: patientObj.full_name || `Patient (${loginId.slice(-4)})`,
+          full_name: assignedFullName,
           preferred_language: patientObj.preferred_language || patientData.preferred_language || 'Hindi',
           accessibility_mode: patientObj.accessibility_mode || patientData.accessibility_mode || 'standard',
           consents: patientObj.consents || patientData.consents,
@@ -156,10 +160,10 @@ export const PatientLogin = () => {
         nextStep();
       }
     } catch (err) {
-      console.warn('Login error, fallback to new patient record:', err.message);
+      console.warn('Login offline fallback:', err.message);
       updatePatient({
+        patient_id: 1,
         login_id: loginId.trim(),
-        password: password || '123',
         full_name: `Patient (${loginId.slice(-4) || 'Walk-in'})`
       });
       nextStep();
@@ -177,7 +181,7 @@ export const PatientLogin = () => {
     const guestId = `GUEST-OPD-${randomSuffix}`;
 
     try {
-      const response = await loginOrRegisterPatient({
+      const response = await apiRegisterOrLoginPatient({
         login_id: guestId,
         password: 'guest123',
         full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`,
@@ -185,11 +189,13 @@ export const PatientLogin = () => {
         accessibility_mode: patientData.accessibility_mode || 'standard'
       });
       const patientObj = response.patient || response;
+      const assignedPatientId = response.patient_id || patientObj.patient_id || 1;
+      const assignedFullName = response.full_name || patientObj.full_name || `Walk-in Patient (आपातकालीन #${randomSuffix})`;
+
       updatePatient({
-        patient_id: response.patient_id || patientObj.patient_id || 1,
+        patient_id: assignedPatientId,
         login_id: 'GUEST-OPD',
-        password: 'guest123',
-        full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`,
+        full_name: assignedFullName,
         preferred_language: patientData.preferred_language || 'Hindi',
         accessibility_mode: patientData.accessibility_mode || 'standard',
         consents: [
@@ -201,9 +207,10 @@ export const PatientLogin = () => {
       if (response.token_number) setTokenNumber(response.token_number);
       nextStep();
     } catch (err) {
+      console.warn('Walk-in offline fallback:', err.message);
       updatePatient({
+        patient_id: 1,
         login_id: 'GUEST-OPD',
-        password: 'guest123',
         full_name: `Walk-in Patient (आपातकालीन #${randomSuffix})`
       });
       nextStep();

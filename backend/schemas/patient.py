@@ -16,6 +16,7 @@ class PatientCreate(BaseModel):
     phone_number: Optional[str] = None
     login_id: Optional[str] = None
     password: Optional[str] = None  # raw password — hashed in router
+    password_hash: Optional[str] = None
 
 
 # What the API sends back after creating a patient

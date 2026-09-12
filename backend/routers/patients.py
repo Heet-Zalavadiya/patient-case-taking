@@ -48,11 +48,13 @@ def list_patients(db: Session = Depends(get_db)):
 @router.post("", response_model=PatientResponse, status_code=201)
 @router.post("/", response_model=PatientResponse, status_code=201, include_in_schema=False)
 def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
-    # Check if login_id already exists
+    # Check if login_id already exists (Register or Login behavior)
     if patient_data.login_id:
         existing = db.query(Patient).filter(Patient.login_id == patient_data.login_id).first()
         if existing:
-            raise HTTPException(status_code=400, detail="login_id already registered")
+            return existing
+
+    pw_hash = patient_data.password_hash or (hash_password(patient_data.password) if patient_data.password else None)
 
     new_patient = Patient(
         full_name=patient_data.full_name,
@@ -65,7 +67,7 @@ def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
         gender=patient_data.gender,
         phone_number=patient_data.phone_number,
         login_id=patient_data.login_id,
-        password_hash=hash_password(patient_data.password) if patient_data.password else None,
+        password_hash=pw_hash,
     )
     db.add(new_patient)
     db.commit()

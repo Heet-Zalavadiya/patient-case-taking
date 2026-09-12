@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePatient } from '../../context/PatientContext';
-import { submitConsents, saveConsent } from '../../services/api';
+import { apiSubmitConsent, apiCreateSession, submitConsents, saveConsent } from '../../services/api';
 import { savePatientOnboarding } from '../../services/mockApi';
 import { speakPhrase } from '../../utils/speechUtils';
 import { 
@@ -33,7 +33,8 @@ export const ConsentScreen = () => {
     nextStep, 
     prevStep, 
     setTokenNumber, 
-    updatePatient 
+    updatePatient,
+    setSessionId
   } = usePatient();
 
   const isLight = theme === 'light';
@@ -237,18 +238,33 @@ export const ConsentScreen = () => {
     });
 
     try {
-      // Submit both consents to FastAPI backend
-      const consentResult = await submitConsents(
-        patientData.patient_id || 1,
-        guaranteedConsents
-      );
+      const patientId = patientData.patient_id || 1;
+      // Send two sequential requests using apiSubmitConsent
+      await apiSubmitConsent(patientId, {
+        consent_type: 'data_capture',
+        is_granted: true,
+        granted_via: 'touch'
+      });
+      await apiSubmitConsent(patientId, {
+        consent_type: 'abdm_sharing',
+        is_granted: true,
+        granted_via: 'touch'
+      });
 
-      const assignedToken = consentResult.token_number || patientData.token_number || 'A-102';
+      // Immediately call apiCreateSession(patient_id, history_mode) to initialize a real DB session
+      const sessionRes = await apiCreateSession(patientId, patientData.history_mode || 'allopathic');
+      if (sessionRes && sessionRes.session_id) {
+        setSessionId(sessionRes.session_id);
+      }
+
+      const assignedToken = patientData.token_number || 'A-102';
       setTokenNumber(assignedToken);
       updatePatient({
         token_number: assignedToken,
+        session_id: sessionRes?.session_id || patientData.session_id,
         consents: guaranteedConsents
       });
+      // Advance to Step 4 (AI Interview)
       nextStep();
     } catch (err) {
       console.warn('Accept all consent notice:', err);
@@ -283,28 +299,33 @@ export const ConsentScreen = () => {
     ];
 
     try {
-      // 1. Submit consents to FastAPI backend (both data_capture and abdm_sharing)
-      const consentResult = await submitConsents(
-        patientData.patient_id || 1,
-        consentsToSubmit
-      );
-
-      updatePatient({
-        consents: consentsToSubmit
+      const patientId = patientData.patient_id || 1;
+      // Send two sequential requests using apiSubmitConsent
+      await apiSubmitConsent(patientId, {
+        consent_type: 'data_capture',
+        is_granted: Boolean(dataCaptureConsent.is_granted),
+        granted_via: dataCaptureConsent.granted_via || 'touch'
+      });
+      await apiSubmitConsent(patientId, {
+        consent_type: 'abdm_sharing',
+        is_granted: Boolean(abdmConsent.is_granted),
+        granted_via: abdmConsent.granted_via || 'touch'
       });
 
-      // 2. Also ensure local session onboarding token is synced
-      const result = await savePatientOnboarding({
-        ...patientData,
-        consents: consentsToSubmit
-      });
-      const assignedToken = consentResult.token_number || result.token_number || patientData.token_number || 'A-102';
+      // Immediately call apiCreateSession(patient_id, history_mode) to initialize a real DB session
+      const sessionRes = await apiCreateSession(patientId, patientData.history_mode || 'allopathic');
+      if (sessionRes && sessionRes.session_id) {
+        setSessionId(sessionRes.session_id);
+      }
 
+      const assignedToken = patientData.token_number || 'A-102';
       setTokenNumber(assignedToken);
       updatePatient({
         token_number: assignedToken,
+        session_id: sessionRes?.session_id || patientData.session_id,
         consents: consentsToSubmit
       });
+      // Advance to Step 4
       nextStep();
     } catch (err) {
       console.error('Submission error, proceeding with session:', err);

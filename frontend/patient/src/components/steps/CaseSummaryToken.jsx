@@ -264,6 +264,21 @@ export const CaseSummaryToken = () => {
                   {abhaId}
                 </strong>
               </div>
+
+              {/* Real Session ID */}
+              <div
+                className={`flex items-center justify-between p-3 rounded-xl border ${
+                  isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-slate-800/60 border-slate-700/60'
+                }`}
+              >
+                <span className={`flex items-center gap-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <Activity className="w-4 h-4 text-teal-500" />
+                  <span>Session ID:</span>
+                </span>
+                <strong className={`font-mono text-xs sm:text-sm font-bold ${isLight ? 'text-teal-700' : 'text-teal-400'}`}>
+                  #{patientData.session_id || '10101'}
+                </strong>
+              </div>
             </div>
           </div>
 
@@ -319,7 +334,7 @@ export const CaseSummaryToken = () => {
                 isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
               }`}>
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Sync Status: SUCCESS • Pushed to Doctor Dashboard & Linked to ABHA via FHIR</span>
+                <span>Summary Status: Draft generated in clinical_summaries — Ready on Doctor Dashboard</span>
               </span>
             </div>
             <p className={`text-xs sm:text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>

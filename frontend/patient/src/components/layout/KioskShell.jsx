@@ -7,6 +7,7 @@ import { AiInterview } from '../steps/AiInterview';
 import { DocumentUpload } from '../steps/DocumentUpload';
 import { CaseSummaryToken } from '../steps/CaseSummaryToken';
 import { speakPhrase } from '../../utils/speechUtils';
+import { subscribeBackendStatus, apiCheckHealth } from '../../services/api';
 import { 
   Activity, 
   Clock, 
@@ -43,6 +44,22 @@ export const KioskShell = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showAccessMenu, setShowAccessMenu] = useState(false);
+  const [isBackendOnline, setIsBackendOnline] = useState(false);
+
+  // Subscribe to backend online / resilient mock status
+  useEffect(() => {
+    const unsubscribe = subscribeBackendStatus((online) => {
+      setIsBackendOnline(online);
+    });
+    apiCheckHealth();
+    const interval = setInterval(() => {
+      apiCheckHealth();
+    }, 10000);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
 
   // Live ticking clock for hospital kiosk
   useEffect(() => {
@@ -531,13 +548,29 @@ export const KioskShell = () => {
           <span className="sm:hidden">DPDP & ABDM Compliant</span>
         </div>
 
-        {/* Center: Active Session Token Badge if generated */}
-        {patientData.token_number && (
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 font-bold text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Active Token: {patientData.token_number}</span>
-          </div>
-        )}
+        {/* Center: Backend Connectivity & Offline Resilient Mode Indicator */}
+        <div className="flex items-center gap-2">
+          {isBackendOnline ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 font-bold text-xs shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Connected to FastAPI (localhost:8000)</span>
+            </div>
+          ) : (
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold shadow-xs ${
+              isLight ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            }`}>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>Connected to Mock Hub / Offline Resilient Mode</span>
+            </div>
+          )}
+
+          {patientData.token_number && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-600 font-bold text-xs">
+              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+              <span>Active Token: {patientData.token_number}</span>
+            </div>
+          )}
+        </div>
 
         {/* Right: Hospital Staff Assistance */}
         <div className="flex items-center gap-3">
