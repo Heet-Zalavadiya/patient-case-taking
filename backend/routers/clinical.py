@@ -1,6 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
+import logging
+
+logger = logging.getLogger("uvicorn")
 
 from database.connection import get_db
 from models.abdm_sync_log import AbdmSyncLog
@@ -46,6 +49,7 @@ from schemas.clinical import (
     StructuredHistoryResponse,
     SummaryStatusUpdate,
 )
+from services.ocr_bridge import run_ocr, is_ocr_available
 
 router = APIRouter(tags=["Clinical"])
 
@@ -179,46 +183,108 @@ async def create_document(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    """
+    Upload a medical document (prescription / lab report / discharge summary).
+
+    Accepts two content-type modes:
+    • multipart/form-data  — file upload from the kiosk scanner / frontend
+    • application/json     — pre-processed metadata without a file
+
+    When a file is provided, the OCR pipeline is called in-process via ocr_bridge.
+    Extracted medications, lab values, and conditions are persisted automatically.
+    If the OCR pipeline is unavailable the document is saved with status='pending'.
+    """
     content_type = request.headers.get("content-type", "")
+
     if "multipart/form-data" in content_type:
+        # ── Parse form fields ─────────────────────────────────────────────────
         form = await request.form()
         patient_id = int(form.get("patient_id", 1))
         session_id_raw = form.get("session_id")
         session_id = int(session_id_raw) if session_id_raw and str(session_id_raw).isdigit() else None
         doc_type = form.get("document_type", "prescription")
         file_obj = form.get("file")
-        filename = getattr(file_obj, "filename", "scanned_doc.jpg")
+        filename = getattr(file_obj, "filename", "scanned_doc.jpg") or "scanned_doc.jpg"
         file_path = f"/uploads/documents/{filename}"
 
+        # ── Validate patient / session ────────────────────────────────────────
         get_patient_or_404(patient_id, db)
         if session_id is not None:
             session = get_session_or_404(session_id, db)
             if session.patient_id != patient_id:
                 raise HTTPException(status_code=400, detail="Session does not belong to patient")
 
+        # ── Run OCR bridge ────────────────────────────────────────────────────
+        ocr_result = {"status": "pending", "raw_ocr_text": "",
+                      "medications": [], "lab_values": [], "conditions": [],
+                      "document_type": doc_type, "document_date": None}
+
+        if file_obj is not None:
+            try:
+                image_bytes = await file_obj.read()
+                if image_bytes:
+                    ocr_result = run_ocr(image_bytes)
+                    # Use the OCR-detected document type if we got one
+                    if ocr_result.get("document_type") not in (None, "unknown", ""):
+                        doc_type = ocr_result["document_type"]
+                    logger.info(
+                        f"[OCR] document_type={doc_type} "
+                        f"status={ocr_result.get('status')} "
+                        f"meds={len(ocr_result.get('medications', []))}"
+                    )
+            except Exception as e:
+                logger.exception(f"[OCR] Failed to read uploaded file: {e}")
+
+        # ── Save document record ──────────────────────────────────────────────
         document = MedicalDocument(
             patient_id=patient_id,
             session_id=session_id,
             document_type=doc_type,
             file_path=file_path,
-            ocr_status="processed",
-            ocr_raw_text="Extracted: Tab Paracetamol 500mg (BD), Tab Atorvastatin 20mg (HS), Ashwagandha Churna (3g with milk).",
+            ocr_status=ocr_result.get("status", "pending"),
+            ocr_raw_text=ocr_result.get("raw_ocr_text") or None,
             ocr_language="en",
         )
         db.add(document)
         db.commit()
         db.refresh(document)
 
-        # Pre-seed extracted medications so getPatientDocuments returns them immediately
-        meds = [
-            DocumentExtractedMedication(document_id=document.document_id, medicine_name="Paracetamol", dosage="500mg", frequency="BD", duration="5 days"),
-            DocumentExtractedMedication(document_id=document.document_id, medicine_name="Atorvastatin", dosage="20mg", frequency="HS", duration="30 days"),
-            DocumentExtractedMedication(document_id=document.document_id, medicine_name="Ashwagandha Churna", dosage="3g", frequency="with milk", duration="15 days"),
-        ]
-        db.add_all(meds)
+        # ── Persist extracted medications ─────────────────────────────────────
+        for med in ocr_result.get("medications", []):
+            db.add(DocumentExtractedMedication(
+                document_id=document.document_id,
+                medicine_name=med.get("medicine_name", ""),
+                dosage=med.get("dosage"),
+                frequency=med.get("frequency"),
+                duration=med.get("duration"),
+            ))
+
+        # ── Persist extracted lab values ──────────────────────────────────────
+        for lab in ocr_result.get("lab_values", []):
+            db.add(DocumentExtractedLabValue(
+                document_id=document.document_id,
+                test_name=lab.get("test_name", ""),
+                result_value=lab.get("result_value"),
+                unit=lab.get("unit"),
+                reference_range=lab.get("reference_range"),
+                is_abnormal=bool(lab.get("is_abnormal", False)),
+            ))
+
+        # ── Persist extracted conditions / diagnoses ───────────────────────────
+        for cond in ocr_result.get("conditions", []):
+            db.add(DocumentExtractedCondition(
+                document_id=document.document_id,
+                entity_type=cond.get("entity_type", "diagnosis"),
+                description=cond.get("description", ""),
+                entity_date=cond.get("entity_date"),
+            ))
+
         db.commit()
+        db.refresh(document)
         return document
+
     else:
+        # ── JSON body path (pre-processed / metadata-only) ────────────────────
         body = await request.json()
         doc_data = MedicalDocumentCreate(**body)
         get_patient_or_404(doc_data.patient_id, db)

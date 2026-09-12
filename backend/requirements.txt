@@ -1,3 +1,4 @@
+# ── Backend core ───────────────────────────────────────────────────────────────
 fastapi
 uvicorn[standard]
 sqlalchemy
@@ -5,3 +6,13 @@ pyodbc
 pydantic
 pydantic-settings
 python-dotenv
+python-multipart          # required for multipart/form-data file uploads
+
+# ── OCR pipeline dependencies (in-process bridge via services/ocr_bridge.py) ───
+# Install these so the backend can import and run the OCR pipeline directly.
+# If OCR is unavailable at startup, documents are saved with status='pending'
+# and no error is raised.
+rapidfuzz                 # fuzzy drug-name matching (Stage 3)
+google-genai              # Gemini LLM structuring (Stage 2)
+azure-ai-documentintelligence  # Azure Document Intelligence SDK (Stage 1)
+pillow                    # image pre-processing
