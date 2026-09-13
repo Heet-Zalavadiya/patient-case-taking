@@ -5,6 +5,9 @@ import {
   apiLogTurn,
   apiTriggerRedFlag,
   apiGenerateSummary,
+  apiValidateComplaint,
+  apiSarvamStt,
+  apiSarvamNormalize,
   createClinicalSession, 
   saveInterviewTurn, 
   triggerRedFlag,
@@ -18,7 +21,8 @@ import {
   Mic, 
   MicOff, 
   Send, 
-  AlertTriangle, 
+  AlertTriangle,
+  AlertCircle,
   CheckCircle2, 
   ArrowRight, 
   ArrowLeft, 
@@ -32,15 +36,25 @@ import {
   Smile, 
   Meh, 
   Frown, 
-  FlameKindling,
-  Stethoscope,
-  Clock,
-  Radio,
-  RefreshCw,
-  Loader2,
-  Database,
-  CheckCircle
+  FlameKindling, 
+  Stethoscope, 
+  Clock, 
+  Radio, 
+  RefreshCw, 
+  Loader2, 
+  Database, 
+  CheckCircle 
 } from 'lucide-react';
+
+// Multilingual validation error message for chief complaint free-text input
+const COMPLAINT_VALIDATION_ERRORS = {
+  English: 'Please describe a health problem or symptom (e.g. fever, headache, stomach pain).',
+  Hindi: 'कृपया किसी स्वास्थ्य समस्या या लक्षण का विवरण दें (जैसे बुखार, सिरदर्द, पेट दर्द)।',
+  Gujarati: 'કૃપા કરીને કોઈ સ્વાસ્થ્ય સમસ્યા અથવા લક્ષણ જણાવો (જેમ કે તાવ, માથાનો દુખાવો, પેટમાં દુખાવો).',
+  Marathi: 'कृपया आरोग्य समस्या किंवा लक्षण सांगा (उदा. ताप, डोकेदुखी, पोटदुखी).',
+  Tamil: 'தயவுசெய்து ஒரு உடல்நலப் பிரச்சினை அல்லது அறிகுறியை விவரிக்கவும் (எ.கா. காய்ச்சல், தலைவலி, வயிற்று வலி).',
+  Bengali: 'অনুগ্রহ করে কোনো স্বাস্থ্য সমস্যা বা উপসর্গ বর্ণনা করুন (যেমন জ্বর, মাথাব্যথা, পেটে ব্যথা)।'
+};
 
 export const AiInterview = () => {
   const { 
@@ -69,6 +83,8 @@ export const AiInterview = () => {
   const [showRedFlagModal, setShowRedFlagModal] = useState(false);
   const [redFlagDetail, setRedFlagDetail] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const [toastNotification, setToastNotification] = useState(null); // { message: string, type: 'turn' | 'summary' }
 
   const showToast = (message, type = 'turn') => {
@@ -79,26 +95,49 @@ export const AiInterview = () => {
   };
 
   const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const hasVoiceTranscriptRef = useRef(false);
+  const isStoppingRecordingRef = useRef(false);
+  const isSubmittingAnswerRef = useRef(false);
+  const isValidatingAnswerRef = useRef(false);
+  const sessionPromiseRef = useRef(null);
+  const [isTranscribingWithSarvam, setIsTranscribingWithSarvam] = useState(false);
+
+  const ensureSession = async () => {
+    if (patientData.session_id) return patientData.session_id;
+
+    if (!sessionPromiseRef.current) {
+      sessionPromiseRef.current = apiCreateSession(
+        patientData.patient_id,
+        patientData.history_mode || 'allopathic'
+      ).then((session) => {
+        if (!session?.session_id) {
+          throw new Error('The clinical session could not be created.');
+        }
+        setSessionId(session.session_id);
+        return session.session_id;
+      }).finally(() => {
+        sessionPromiseRef.current = null;
+      });
+    }
+
+    return sessionPromiseRef.current;
+  };
 
   // Initialize clinical session on mount if not already present
   useEffect(() => {
     const initSession = async () => {
       if (!patientData.session_id) {
         try {
-          const res = await apiCreateSession(
-            patientData.patient_id || 1,
-            patientData.history_mode || 'allopathic'
-          );
-          if (res && res.session_id) {
-            setSessionId(res.session_id);
-          }
+          await ensureSession();
         } catch (e) {
           console.warn('Session init error:', e);
         }
       }
     };
     initSession();
-  }, [patientData.session_id, patientData.patient_id]);
+  }, [patientData.session_id, patientData.patient_id, patientData.history_mode]);
 
   // Language mapping from unified supported languages
   const preferredLang = patientData.preferred_language || 'Hindi';
@@ -402,11 +441,16 @@ export const AiInterview = () => {
   };
 
   // Finish Interview & Trigger Clinical Summary Generation
-  const handleFinishInterview = async () => {
+  const handleFinishInterview = async (completedSessionId = patientData.session_id) => {
     if (isGeneratingSummary) return;
     setIsGeneratingSummary(true);
 
-    const activeSessionId = patientData.session_id || 10101;
+    if (!completedSessionId) {
+      setValidationError('Your clinical session is not ready yet. Please try again.');
+      setIsGeneratingSummary(false);
+      return;
+    }
+    const activeSessionId = completedSessionId;
     const turns = patientData.interview_turns || [];
     const chiefComplaint = turns.length > 0 ? turns[0].patient_response_text : 'General Case Consultation';
 
@@ -443,11 +487,21 @@ export const AiInterview = () => {
 
   // Record a Turn & Auto-Advance
   const handleAnswerSubmit = async (answerText, inputMode = 'touch', isEmergencyChip = false) => {
-    if (!answerText.trim()) return;
+    if (!answerText.trim() || isSubmittingAnswerRef.current) return;
+    isSubmittingAnswerRef.current = true;
 
     setIsSavingTurn(true);
     const turnNumber = currentQIndex + 1;
-    const sessionId = patientData.session_id || 10101;
+    let sessionId;
+    try {
+      sessionId = await ensureSession();
+    } catch (err) {
+      console.error('Cannot save interview turn without a clinical session:', err);
+      setValidationError('Unable to start your clinical session. Please check the connection and try again.');
+      setIsSavingTurn(false);
+      isSubmittingAnswerRef.current = false;
+      return;
+    }
 
     // Check emergency trigger
     const isEmergency = isEmergencyChip || checkForRedFlags(answerText);
@@ -491,18 +545,63 @@ export const AiInterview = () => {
     setIsSavingTurn(false);
     setVoiceText('');
     setSelectedRating(null);
+    setValidationError('');
 
     // 4. Advance to next question or complete
     if (currentQIndex < questions.length - 1) {
       setCurrentQIndex(prev => prev + 1);
     } else {
       // Finished all questions, generate summary and proceed to Step 5
-      await handleFinishInterview();
+      await handleFinishInterview(sessionId);
     }
+    isSubmittingAnswerRef.current = false;
+  };
+
+  // Handle Free-Text (Typed or Voice Transcribed) Submission with Gemini Validation
+  const handleFreeTextSubmit = async (text) => {
+    const trimmed = (text || '').trim();
+    if (!trimmed || isSavingTurn || isValidating || isValidatingAnswerRef.current) return;
+    isValidatingAnswerRef.current = true;
+
+    // Validate only for Question 1: SOCRATES Site & Complaint ("What problem or health issue are you having today?")
+    if (currentQIndex === 0 || currentQ?.id === 'chief_complaint') {
+      setIsValidating(true);
+      setValidationError('');
+
+      try {
+        const result = await apiValidateComplaint(trimmed);
+        if (result && !result.is_valid && result.status === 'INVALID') {
+          // If Gemini responds INVALID:
+          // 1. Do NOT submit answer or advance flow
+          // 2. Show friendly inline error message in patient's selected language
+          // 3. Keep typed text in box so they can edit it
+          // 4. Highlight input box border in red
+          const errText =
+            COMPLAINT_VALIDATION_ERRORS[lang] ||
+            COMPLAINT_VALIDATION_ERRORS[preferredLang] ||
+            COMPLAINT_VALIDATION_ERRORS['Hindi'] ||
+            COMPLAINT_VALIDATION_ERRORS['English'];
+          setValidationError(errText);
+          setIsValidating(false);
+          isValidatingAnswerRef.current = false;
+          return;
+        }
+      } catch (err) {
+        console.error('Complaint validation error, failing open:', err);
+      } finally {
+        setIsValidating(false);
+      }
+    }
+
+    // VALID (or non-complaint question): submit normally
+    setValidationError('');
+    await handleAnswerSubmit(trimmed, 'voice');
+    isValidatingAnswerRef.current = false;
   };
 
   // Pain Scale Rating Selection
   const handlePainRating = (score) => {
+    setValidationError('');
     setSelectedRating(score);
     const painLabel = score <= 3 
       ? `Score ${score}/10 (Mild / हल्का)` 
@@ -516,13 +615,37 @@ export const AiInterview = () => {
     handleAnswerSubmit(painLabel, 'touch', isEmergency);
   };
 
-  // Speech Recognition (Web Speech API + Simulated Fallback)
-  const startVoiceRecording = () => {
+  // Speech Recognition (Sarvam AI Saaras STT + Web Speech API Live Preview + Resilient Fallback)
+  const startVoiceRecording = async () => {
+    if (isTranscribingWithSarvam || isStoppingRecordingRef.current) return;
+    setValidationError('');
     setIsListening(true);
     setVoiceText('');
+    audioChunksRef.current = [];
+    hasVoiceTranscriptRef.current = false;
+    isStoppingRecordingRef.current = false;
 
+    // 1. Start browser MediaRecorder to capture audio for Sarvam AI Saaras STT
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
+
+        mediaRecorder.start(250);
+      } catch (mediaErr) {
+        console.warn('MediaRecorder audio capture note:', mediaErr);
+      }
+    }
+
+    // 2. Start Web Speech recognition for live interim transcription feedback
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
     if (SpeechRecognition) {
       try {
         const recognition = new SpeechRecognition();
@@ -537,16 +660,20 @@ export const AiInterview = () => {
           const transcript = Array.from(event.results)
             .map(result => result[0].transcript)
             .join('');
+          hasVoiceTranscriptRef.current = Boolean(transcript.trim());
           setVoiceText(transcript);
         };
 
         recognition.onerror = (err) => {
-          console.warn('SpeechRecognition error, using simulation fallback:', err);
-          fallbackVoiceSimulation();
+          console.warn('SpeechRecognition interim error:', err);
         };
 
         recognition.onend = () => {
-          setIsListening(false);
+          if (!isStoppingRecordingRef.current && mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            stopVoiceRecording();
+          } else {
+            setIsListening(false);
+          }
         };
 
         recognition.start();
@@ -555,11 +682,14 @@ export const AiInterview = () => {
         console.warn('SpeechRecognition failed to start:', e);
       }
     }
-
-    fallbackVoiceSimulation();
   };
 
-  const stopVoiceRecording = () => {
+  const stopVoiceRecording = async () => {
+    if (isStoppingRecordingRef.current) return;
+    isStoppingRecordingRef.current = true;
+    setIsListening(false);
+
+    // Stop browser speech recognition
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -567,10 +697,84 @@ export const AiInterview = () => {
         // ignore
       }
     }
-    setIsListening(false);
+
+    // Stop MediaRecorder and transcribe via Sarvam Saaras AI
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        const recorder = mediaRecorderRef.current;
+        recorder.onstop = async () => {
+          try {
+            recorder.stream?.getTracks().forEach((track) => track.stop());
+          } catch (e) {}
+
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          if (audioBlob.size > 800) {
+            setIsTranscribingWithSarvam(true);
+            try {
+              const sarvamRes = await apiSarvamStt(audioBlob, langConfig?.code || 'hi-IN');
+              if (sarvamRes && sarvamRes.success && sarvamRes.transcript?.trim()) {
+                hasVoiceTranscriptRef.current = true;
+                setVoiceText(sarvamRes.transcript.trim());
+                showToast('Transcribed with Sarvam AI (Indian Language Model)', 'turn');
+              } else if (!voiceText.trim()) {
+                // If Sarvam failed or returned empty and no browser transcript, fallback to simulation
+                fallbackVoiceSimulation();
+              }
+            } catch (sarvamErr) {
+              console.warn('Sarvam STT failed, using browser transcript:', sarvamErr);
+              if (!voiceText.trim()) fallbackVoiceSimulation();
+            } finally {
+              setIsTranscribingWithSarvam(false);
+              isStoppingRecordingRef.current = false;
+            }
+          } else if (!voiceText.trim()) {
+            fallbackVoiceSimulation();
+            isStoppingRecordingRef.current = false;
+          }
+        };
+
+        recorder.stop();
+        return;
+      } catch (stopErr) {
+        console.warn('MediaRecorder stop note:', stopErr);
+        isStoppingRecordingRef.current = false;
+      }
+    }
+
+    // If no audio chunks and no transcript, trigger fallback
+    setTimeout(() => {
+      setVoiceText((current) => {
+        if (!current || !current.trim()) {
+          fallbackVoiceSimulation();
+        }
+        return current;
+      });
+      isStoppingRecordingRef.current = false;
+    }, 400);
   };
 
   const fallbackVoiceSimulation = () => {
+    // Recording/transcription may finish after browser speech recognition.
+    // Keep this fallback silent so a late callback never shows a false error.
+    setIsListening(false);
+    return;
+
+    // Keep the current input intact. A transcription failure must never insert
+    // a fabricated symptom into the patient's medical record.
+    if (hasVoiceTranscriptRef.current) {
+      return;
+    }
+    setVoiceText((current) => {
+      if (!current.trim()) {
+        const message = 'No speech detected. Please speak again or type your answer.';
+        setValidationError(message);
+        showToast(message, 'turn');
+      }
+      return current;
+    });
+    setIsListening(false);
+    return;
+
     setTimeout(() => {
       const sampleResponses = {
         Hindi: 'मुझे पिछले 2 दिन से तेज़ सिर दर्द और हल्का बुखार है।',
@@ -582,7 +786,7 @@ export const AiInterview = () => {
       };
       setVoiceText(sampleResponses[lang] || sampleResponses['Hindi']);
       setIsListening(false);
-    }, 1800);
+    }, 800);
   };
 
   return (
@@ -747,39 +951,56 @@ export const AiInterview = () => {
         </div>
 
         {/* Real-time Transcribed Text Input */}
-        <div className="w-full relative flex items-center max-w-2xl mx-auto">
-          <input
-            type="text"
-            value={voiceText}
-            onChange={(e) => setVoiceText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAnswerSubmit(voiceText, 'voice');
-            }}
-            placeholder={
-              isListening
-                ? 'Listening... Speak your symptoms clearly'
-                : 'Spoken or typed response appears here...'
-            }
-            className={`w-full h-12 pl-4 pr-12 rounded-xl border-2 text-sm sm:text-base font-bold placeholder-slate-400 focus:outline-none transition shadow-inner ${
-              isLight
-                ? 'bg-white border-cyan-300 text-slate-900 focus:border-cyan-500'
-                : 'bg-slate-950 border-slate-700 text-white focus:border-cyan-400'
-            }`}
-          />
+        <div className="w-full relative flex flex-col max-w-2xl mx-auto">
+          <div className="w-full relative flex items-center">
+            <input
+              type="text"
+              value={voiceText}
+              onChange={(e) => {
+                setVoiceText(e.target.value);
+                if (validationError) setValidationError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleFreeTextSubmit(voiceText);
+              }}
+              placeholder={
+                isListening
+                  ? 'Listening... Speak your symptoms clearly'
+                  : isTranscribingWithSarvam
+                  ? 'Transcribing with Sarvam AI Indian Voice Model...'
+                  : 'Spoken or typed response appears here...'
+              }
+              className={`w-full h-12 pl-4 pr-12 rounded-xl border-2 text-sm sm:text-base font-bold placeholder-slate-400 focus:outline-none transition shadow-inner ${
+                validationError
+                  ? 'border-rose-500 bg-rose-50/20 text-rose-950 dark:text-rose-200 ring-2 ring-rose-500/40'
+                  : isLight
+                  ? 'bg-white border-cyan-300 text-slate-900 focus:border-cyan-500'
+                  : 'bg-slate-950 border-slate-700 text-white focus:border-cyan-400'
+              }`}
+            />
 
-          <button
-            type="button"
-            disabled={!voiceText.trim() || isSavingTurn}
-            onClick={() => handleAnswerSubmit(voiceText, 'voice')}
-            className="absolute right-1.5 p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 disabled:opacity-30 transition cursor-pointer"
-            title="Send Response"
-          >
-            {isSavingTurn ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
+            <button
+              type="button"
+              disabled={!voiceText.trim() || isSavingTurn || isValidating || isTranscribingWithSarvam}
+              onClick={() => handleFreeTextSubmit(voiceText)}
+              className="absolute right-1.5 p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 disabled:opacity-30 transition cursor-pointer"
+              title="Send Response"
+            >
+              {(isSavingTurn || isValidating || isTranscribingWithSarvam) ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+
+          {/* INLINE VALIDATION ERROR MESSAGE */}
+          {validationError && (
+            <div className="flex items-center gap-1.5 mt-2 px-1 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 text-left animate-in fade-in slide-in-from-top-1 duration-200">
+              <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
+              <span>{validationError}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -853,7 +1074,10 @@ export const AiInterview = () => {
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => handleAnswerSubmit(chip.label, 'touch', chip.isEmergency)}
+                  onClick={() => {
+                    setValidationError('');
+                    handleAnswerSubmit(chip.label, 'touch', chip.isEmergency);
+                  }}
                   className={`p-3 rounded-xl border-2 text-left font-black text-sm sm:text-base flex flex-col justify-between transition-all transform active:scale-95 cursor-pointer shadow-xs min-h-[85px] ${
                     chip.isEmergency
                       ? isLight

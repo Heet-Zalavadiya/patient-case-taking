@@ -57,6 +57,8 @@ def get_genai_client() -> genai.Client:
 # Tool declaration for emergency red flag triage
 flag_emergency = types.FunctionDeclaration(
     name="flag_emergency",
+
+    description="Call this immediately when the patient's symptoms match an acute red-flag emergency pattern.",
     parameters={
         "type": "object",
         "properties": {

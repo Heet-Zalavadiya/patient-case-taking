@@ -58,6 +58,12 @@ def health_check():
 from routers.patients import router as patients_router
 from routers.clinical import router as clinical_router
 from routers.doctors import router as doctor_router
+from routers.chat import router as chat_router
+from routers.sarvam import router as sarvam_router
+
+# Mount all routers under /api/v1 AND root for complete Doctor & Patient frontend compatibility
+app.include_router(patients_router, prefix="/api/v1")
+from routers.doctors import router as doctor_router
 
 # Mount all routers under /api/v1 AND root for complete Doctor & Patient frontend compatibility
 app.include_router(patients_router, prefix="/api/v1")
@@ -65,6 +71,17 @@ app.include_router(patients_router)
 
 app.include_router(clinical_router, prefix="/api/v1")
 app.include_router(clinical_router)
+
+app.include_router(doctor_router, prefix="/api/v1")
+app.include_router(doctor_router)
+
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(chat_router)
+
+app.include_router(sarvam_router, prefix="/api/v1")
+app.include_router(sarvam_router, prefix="/api")
+app.include_router(sarvam_router)
+
 
 app.include_router(doctor_router, prefix="/api/v1")
 app.include_router(doctor_router)

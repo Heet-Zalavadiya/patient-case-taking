@@ -4,8 +4,10 @@ console.log('--------------------------------------------------');
 console.log('🚀 MediKiosk Unified Platform Launcher (SIH26047)');
 console.log('--------------------------------------------------');
 console.log('🌐 Central Portal Gateway : http://localhost:3000');
-console.log('📱 Patient Kiosk Portal   : http://localhost:5173');
-console.log('👨‍⚕️ Doctor Dashboard      : http://localhost:5174');
+console.log('   ↳ Patient Intake Route : http://localhost:3000/patient ➔ :5173');
+console.log('   ↳ Doctor Console Route : http://localhost:3000/doctor  ➔ :5174');
+console.log('📱 Patient Kiosk Direct   : http://localhost:5173');
+console.log('👨‍⚕️ Doctor Dashboard Direct: http://localhost:5174');
 console.log('⚙️ FastAPI Backend & Docs : http://localhost:8000/docs\n');
 
 const isWindows = process.platform === 'win32';

@@ -4,8 +4,6 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import Session, joinedload
-
 from database.connection import get_db
 from models.clinical_session import ClinicalSession
 from models.clinical_summary import ClinicalSummary
@@ -16,8 +14,8 @@ from models.document_extraction import (
     DocumentExtractedMedication,
 )
 from models.medical_document import MedicalDocument
+from models.interview_turn import InterviewTurn
 from models.patient import Patient
-from models.clinical_session import ClinicalSession
 from models.structured_history import StructuredHistory
 from schemas.clinical import (
     ClinicalSummaryResponse,
@@ -26,9 +24,7 @@ from schemas.clinical import (
     SessionResponse,
     StructuredHistoryResponse,
 )
-from schemas.patient import PatientCreate, PatientResponse
-from schemas.clinical import SessionResponse, StructuredHistoryResponse
-import hashlib
+from schemas.patient import ConsentCreate, ConsentResponse, PatientCreate, PatientResponse
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -38,13 +34,7 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-@router.get("", response_model=List[PatientResponse])
 @router.get("/", response_model=List[PatientResponse], include_in_schema=False)
-def list_patients(db: Session = Depends(get_db)):
-    """List all registered patients (used for Doctor Dashboard patient list)."""
-    return db.query(Patient).order_by(Patient.patient_id.desc()).all()
-
-
 @router.post("", response_model=PatientResponse, status_code=201)
 @router.post("/", response_model=PatientResponse, status_code=201, include_in_schema=False)
 def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
@@ -52,6 +42,17 @@ def create_patient(patient_data: PatientCreate, db: Session = Depends(get_db)):
     if patient_data.login_id:
         existing = db.query(Patient).filter(Patient.login_id == patient_data.login_id).first()
         if existing:
+            # A returning patient must re-enter the active doctor queue. Without
+            # this, a patient marked completed during a prior visit stays hidden.
+            existing.is_active = 1
+            # Refresh registration details when a patient starts a new visit.
+            existing.full_name = patient_data.full_name or existing.full_name
+            existing.age = patient_data.age if patient_data.age is not None else existing.age
+            existing.gender = patient_data.gender or existing.gender
+            existing.preferred_language = patient_data.preferred_language or existing.preferred_language
+            existing.accessibility_mode = patient_data.accessibility_mode or existing.accessibility_mode
+            db.commit()
+            db.refresh(existing)
             return existing
 
     pw_hash = patient_data.password_hash or (hash_password(patient_data.password) if patient_data.password else None)
@@ -84,9 +85,48 @@ def get_patient(patient_id: int, db: Session = Depends(get_db)):
     return patient
 
 
+@router.get("/{patient_id}/intake")
+def get_patient_intake(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    session = (
+        db.query(ClinicalSession)
+        .filter(ClinicalSession.patient_id == patient_id)
+        .order_by(ClinicalSession.started_at.desc(), ClinicalSession.session_id.desc())
+        .first()
+    )
+    if not session:
+        return {"patient_id": patient_id, "session_id": None, "history_mode": None, "interview_turns": []}
+
+    turns = (
+        db.query(InterviewTurn)
+        .filter(InterviewTurn.session_id == session.session_id)
+        .order_by(InterviewTurn.turn_number.asc(), InterviewTurn.turn_id.asc())
+        .all()
+    )
+    return {
+        "patient_id": patient_id,
+        "session_id": session.session_id,
+        "history_mode": session.history_mode,
+        "session_status": session.status,
+        "interview_turns": [
+            {
+                "turn_id": turn.turn_id,
+                "turn_number": turn.turn_number,
+                "input_mode": turn.input_mode,
+                "ai_question": turn.ai_question,
+                "patient_response_text": turn.patient_response_text,
+                "response_language": turn.response_language,
+                "asked_at": turn.asked_at,
+            }
+            for turn in turns
+        ],
+    }
+
+
 @router.post("/{patient_id}/consent", response_model=ConsentResponse, status_code=201)
-def create_patient_consent(
-    patient_id: int,
     consent_data: ConsentCreate,
     db: Session = Depends(get_db),
 ):

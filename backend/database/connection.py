@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
+from pathlib import Path
 
 load_dotenv()  # reads your .env file
 
@@ -17,6 +18,23 @@ settings = Settings()
 
 # ── Connection string & Engine Initialization ─────────────────────────────
 explicit_url = os.getenv("DATABASE_URL")
+
+
+def resolve_database_url(database_url: str | None) -> str | None:
+    """Resolve relative SQLite paths from the repository root, not process CWD."""
+    if not database_url or not database_url.startswith("sqlite:///"):
+        return database_url
+
+    sqlite_path = database_url.removeprefix("sqlite:///")
+    if sqlite_path in (":memory:", "") or Path(sqlite_path).is_absolute():
+        return database_url
+
+    project_root = Path(__file__).resolve().parents[2]
+    absolute_path = (project_root / sqlite_path).resolve()
+    return f"sqlite:///{absolute_path.as_posix()}"
+
+
+explicit_url = resolve_database_url(explicit_url)
 
 def build_engine():
     if explicit_url:

@@ -283,6 +283,14 @@ export const PatientProvider = ({ children }) => {
     }
   };
 
+  const setPainLocations = (locations) => {
+    setPatientData((prev) => ({
+      ...prev,
+      painLocations: locations,
+      pain_locations: locations
+    }));
+  };
+
   const setTokenNumber = (token_number) => {
     setPatientData((prev) => ({
       ...prev,
@@ -329,6 +337,7 @@ export const PatientProvider = ({ children }) => {
     nextStep,
     prevStep,
     goToStep,
+    setPainLocations,
     setTokenNumber,
     resetSession
   };

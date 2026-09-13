@@ -4,8 +4,10 @@ import { PatientLogin } from '../steps/PatientLogin';
 import { LanguageSelect } from '../steps/LanguageSelect';
 import { ConsentScreen } from '../steps/ConsentScreen';
 import { AiInterview } from '../steps/AiInterview';
+import { BodyMapStep } from '../steps/BodyMapStep';
 import { DocumentUpload } from '../steps/DocumentUpload';
 import { CaseSummaryToken } from '../steps/CaseSummaryToken';
+import { ChatbotWidget } from '../common/ChatbotWidget';
 import { speakPhrase } from '../../utils/speechUtils';
 import { subscribeBackendStatus, apiCheckHealth } from '../../services/api';
 import { 
@@ -90,15 +92,16 @@ export const KioskShell = () => {
     { number: 2, title: 'Language', sub: 'भाषा' },
     { number: 3, title: 'Consent', sub: 'सहमति' },
     { number: 4, title: 'AI Case-Taking', sub: 'एआई इनटेक' },
-    { number: 5, title: 'Upload Docs', sub: 'दस्तावेज़' },
-    { number: 6, title: 'Token', sub: 'टोकन' }
+    { number: 5, title: 'Body Map', sub: 'दर्द स्थल' },
+    { number: 6, title: 'Upload Docs', sub: 'दस्तावेज़' },
+    { number: 7, title: 'Token', sub: 'टोकन' }
   ];
 
   // Audio-guided accessibility: announce screen name after 400ms delay
   useEffect(() => {
     if (patientData.accessibility_mode !== 'audio-guided') return;
-    // Step 4 (AI Interview) and Step 6 (CaseSummaryToken) handle their own rich question/token narration
-    if (patientData.current_step === 4 || patientData.current_step === 6) return;
+    // Step 4 (AI Interview), Step 5 (BodyMapStep) and Step 7 (CaseSummaryToken) handle their own rich question/token narration
+    if (patientData.current_step === 4 || patientData.current_step === 5 || patientData.current_step === 7) return;
 
     const screenAnnouncements = {
       1: {
@@ -125,7 +128,7 @@ export const KioskShell = () => {
         Tamil: 'டிஜிட்டல் தனிநபர் தரவு பாதுகாப்பு ஒப்புதல் திரை.',
         Bengali: 'ডিজিটাল ব্যক্তিগত ডেটা সুরক্ষা সম্মতি স্ক্রিন।'
       },
-      5: {
+      6: {
         Hindi: 'पूर्व मेडिकल पर्ची और जांच रिपोर्ट अपलोड स्क्रीन।',
         English: 'Medical Document and Prescription Upload Screen.',
         Gujarati: 'મેડિકલ દસ્તાવેજ અને પ્રિસ્ક્રિપ્શન અપલોડ સ્ક્રીન.',
@@ -159,8 +162,10 @@ export const KioskShell = () => {
       case 4:
         return <AiInterview />;
       case 5:
-        return <DocumentUpload />;
+        return <BodyMapStep />;
       case 6:
+        return <DocumentUpload />;
+      case 7:
         return <CaseSummaryToken />;
       default:
         return <PatientLogin />;
@@ -226,6 +231,11 @@ export const KioskShell = () => {
           {renderStepContent()}
         </main>
       </div>
+
+      {/* LAYER 4: MEDIKIOSK AI CHATBOT WIDGET (Visible ONLY after 1st page login for authenticated patients) */}
+      {patientData.current_step > 1 && Boolean(patientData.patient_id) && (
+        <ChatbotWidget isLight={isLight} />
+      )}
     </div>
   );
 };

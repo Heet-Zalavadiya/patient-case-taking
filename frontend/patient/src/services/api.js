@@ -370,6 +370,92 @@ export const apiGetPatientDocuments = async (patientId) => {
   }
 };
 
+/**
+ * Sarvam AI helpers for the patient interview UI.
+ * These wrappers keep the frontend import contract stable even when the
+ * backend is paused or the Sarvam provider is unavailable.
+ */
+export const apiSarvamStt = async (audioBlob, language_code = 'hi-IN') => {
+  const formData = new FormData();
+  formData.append('file', audioBlob, 'recording.webm');
+  formData.append('language_code', language_code || 'hi-IN');
+
+  try {
+    const res = await axios.post(`${BASE_URL}/api/sarvam/stt`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 12000
+    });
+    notifyStatusChange(true);
+    return res.data;
+  } catch (error) {
+    notifyStatusChange(false);
+    console.warn(`[Sarvam STT fallback] POST /api/sarvam/stt failed (${error.message}).`);
+    return {
+      success: false,
+      transcript: '',
+      language_code: language_code || 'hi-IN',
+      fallback: true,
+      provider: 'sarvam',
+      error: error.message
+    };
+  }
+};
+
+export const apiSarvamNormalize = async (text, source_language = 'auto', target_language = 'en-IN') => {
+  try {
+    const res = await axios.post(`${BASE_URL}/api/sarvam/normalize`, {
+      text,
+      source_language,
+      target_language
+    }, {
+      timeout: 12000,
+      headers: { 'Accept': 'application/json' }
+    });
+    notifyStatusChange(true);
+    return res.data;
+  } catch (error) {
+    notifyStatusChange(false);
+    console.warn(`[Sarvam Normalize fallback] POST /api/sarvam/normalize failed (${error.message}).`);
+    return {
+      success: false,
+      original_text: text,
+      normalized_text: text,
+      translated_text: text,
+      source_language_code: source_language,
+      target_language_code: target_language,
+      fallback: true,
+      provider: 'sarvam',
+      error: error.message
+    };
+  }
+};
+
+export const apiSarvamTts = async (text, language_code = 'hi-IN', speaker = 'meera') => {
+  try {
+    const res = await axios.post(`${BASE_URL}/api/sarvam/tts`, {
+      text,
+      language_code,
+      speaker
+    }, {
+      timeout: 12000,
+      headers: { 'Accept': 'application/json' }
+    });
+    notifyStatusChange(true);
+    return res.data;
+  } catch (error) {
+    notifyStatusChange(false);
+    console.warn(`[Sarvam TTS fallback] POST /api/sarvam/tts failed (${error.message}).`);
+    return {
+      success: false,
+      audio_base64: '',
+      format: 'wav',
+      fallback: true,
+      provider: 'sarvam',
+      error: error.message
+    };
+  }
+};
+
 // Aliases for seamless backward compatibility
 export const loginOrRegisterPatient = apiRegisterOrLoginPatient;
 export const registerOrLoginPatient = apiRegisterOrLoginPatient;
@@ -400,6 +486,9 @@ export default {
   apiGenerateSummary,
   apiUploadDocument,
   apiGetPatientDocuments,
+  apiSarvamStt,
+  apiSarvamNormalize,
+  apiSarvamTts,
   // Backward compatibility
   loginOrRegisterPatient,
   registerOrLoginPatient,
