@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  HeartPulse, 
-  ShieldCheck, 
-  Stethoscope, 
-  Sparkles, 
-  Lock, 
-  User, 
-  Check, 
-  ArrowRight, 
-  Zap, 
-  Clock, 
+import {
+  HeartPulse,
+  ShieldCheck,
+  Stethoscope,
+  Sparkles,
+  Lock,
+  User,
+  Check,
+  ArrowRight,
+  Zap,
+  Clock,
   Building2,
   AlertCircle,
   Sun,
@@ -82,20 +82,17 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col justify-between relative overflow-hidden font-sans select-none transition-colors duration-200 ${
-      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
-    }`}>
-      
+    <div className={`min-h-screen w-full flex flex-col justify-between relative overflow-hidden font-sans select-none transition-colors duration-200 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+      }`}>
+
       {/* Background Medical Ambient Glow & Grid Lines matching Patient UI */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className={`absolute top-0 left-1/4 w-[600px] h-[350px] rounded-full blur-[140px] ${
-          isDark ? 'bg-cyan-600/10' : 'bg-cyan-500/15'
-        }`} />
-        <div className={`absolute bottom-0 right-1/4 w-[600px] h-[350px] rounded-full blur-[140px] ${
-          isDark ? 'bg-teal-600/10' : 'bg-teal-500/15'
-        }`} />
-        <div 
-          className="absolute inset-0 opacity-[0.03]" 
+        <div className={`absolute top-0 left-1/4 w-[600px] h-[350px] rounded-full blur-[140px] ${isDark ? 'bg-cyan-600/10' : 'bg-cyan-500/15'
+          }`} />
+        <div className={`absolute bottom-0 right-1/4 w-[600px] h-[350px] rounded-full blur-[140px] ${isDark ? 'bg-teal-600/10' : 'bg-teal-500/15'
+          }`} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.8) 1px, transparent 0)`,
             backgroundSize: '36px 36px'
@@ -104,9 +101,8 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
       </div>
 
       {/* Top Header Strip */}
-      <header className={`relative z-10 w-full backdrop-blur-xl border-b px-4 sm:px-8 py-3 flex items-center justify-between shadow-lg ${
-        isDark ? 'bg-slate-900/90 border-slate-800/80' : 'bg-white/95 border-slate-200 shadow-sm'
-      }`}>
+      <header className={`relative z-10 w-full backdrop-blur-xl border-b px-4 sm:px-8 py-3 flex items-center justify-between shadow-lg ${isDark ? 'bg-slate-900/90 border-slate-800/80' : 'bg-white/95 border-slate-200 shadow-sm'
+        }`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 p-2 shrink-0">
             <HeartPulse className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 stroke-[2.5]" />
@@ -132,11 +128,10 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
               onClick={onToggleTheme}
               type="button"
               title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer shadow-sm ${
-                isDark 
-                  ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200' 
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer shadow-sm ${isDark
+                  ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
                   : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-              }`}
+                }`}
             >
               {isDark ? (
                 <>
@@ -161,7 +156,7 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
       {/* Main Login Workspace */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-3 sm:p-6 my-auto">
         <div className="w-full max-w-xl space-y-3.5 sm:space-y-4">
-          
+
           {/* Page Title & Subtitle */}
           <div className="text-center space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-semibold shadow-xs">
@@ -180,20 +175,17 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
           </div>
 
           {/* Main Card */}
-          <div className={`backdrop-blur-xl border rounded-3xl p-5 sm:p-7 shadow-2xl transition-all ${
-            isDark 
-              ? 'bg-slate-900/90 border-slate-800 shadow-cyan-950/40 text-slate-100' 
+          <div className={`backdrop-blur-xl border rounded-3xl p-5 sm:p-7 shadow-2xl transition-all ${isDark
+              ? 'bg-slate-900/90 border-slate-800 shadow-cyan-950/40 text-slate-100'
               : 'bg-white/95 border-slate-200 shadow-slate-200/80 text-slate-900'
-          }`}>
-            
-            {/* Quick 1-Click Doctor Profile Presets */}
-            <div className={`mb-5 p-3 sm:p-3.5 rounded-2xl border ${
-              isDark ? 'bg-slate-950/70 border-slate-800/80' : 'bg-slate-50 border-slate-200'
             }`}>
+
+            {/* Quick 1-Click Doctor Profile Presets */}
+            <div className={`mb-5 p-3 sm:p-3.5 rounded-2xl border ${isDark ? 'bg-slate-950/70 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+              }`}>
               <div className="flex items-center justify-between gap-2 mb-2.5">
-                <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                }`}>
+                <span className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
                   <Zap className="w-3.5 h-3.5 text-amber-500" />
                   <span>Choose Doctor Account (चिकित्सक चयन):</span>
                 </span>
@@ -201,7 +193,7 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                   1-Click Select
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {doctors.map((doc, idx) => {
                   const isSelected = loginId.trim().toLowerCase() === doc.login_id.toLowerCase();
@@ -210,23 +202,21 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                       key={doc.doctor_id}
                       type="button"
                       onClick={() => handleSelectDoctorPreset(doc, idx)}
-                      className={`text-left p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative ${
-                        isSelected
+                      className={`text-left p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative ${isSelected
                           ? isDark
                             ? 'bg-cyan-500/15 border-cyan-400 ring-2 ring-cyan-400/30 text-cyan-200 shadow-md shadow-cyan-950/40'
                             : 'bg-cyan-50/90 border-cyan-500 ring-2 ring-cyan-500/30 text-cyan-950 shadow-md shadow-cyan-100'
                           : isDark
-                          ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-slate-900'
-                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
-                      }`}
+                            ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-slate-900'
+                            : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${
-                            doc.is_ayush_practitioner
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${doc.is_ayush_practitioner
                               ? 'bg-gradient-to-br from-amber-400 to-emerald-500 text-slate-950'
                               : 'bg-gradient-to-br from-teal-400 to-cyan-500 text-slate-950'
-                          }`}>
+                            }`}>
                             {doc.name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').slice(0, 2)}
                           </div>
                           <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -246,11 +236,10 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                       </span>
 
                       <div className="mt-2 flex items-center justify-between gap-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                          doc.is_ayush_practitioner
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${doc.is_ayush_practitioner
                             ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
                             : 'bg-cyan-500/15 text-cyan-600 border border-cyan-500/30'
-                        }`}>
+                          }`}>
                           {doc.active_opd_room || (doc.is_ayush_practitioner ? 'AYUSH OPD #14' : 'Allopathic OPD #104')}
                         </span>
                         <span className={`text-[10px] font-mono ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -265,22 +254,19 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
 
             {/* Department Role Switcher Pill */}
             <div className="mb-4">
-              <label className={`block text-[11px] font-bold uppercase tracking-wider mb-2 ${
-                isDark ? 'text-slate-400' : 'text-slate-600'
-              }`}>
+              <label className={`block text-[11px] font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
                 Active Clinical Department:
               </label>
-              <div className={`grid grid-cols-2 gap-2 p-1 rounded-2xl border ${
-                isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-100 border-slate-200'
-              }`}>
+              <div className={`grid grid-cols-2 gap-2 p-1 rounded-2xl border ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-100 border-slate-200'
+                }`}>
                 <button
                   type="button"
                   onClick={() => handleToggleAyush(true)}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isAyushPractitioner
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${isAyushPractitioner
                       ? 'bg-gradient-to-r from-teal-400 to-cyan-500 text-slate-950 shadow-md font-black'
                       : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>AYUSH / Ayurveda</span>
@@ -288,11 +274,10 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                 <button
                   type="button"
                   onClick={() => handleToggleAyush(false)}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    !isAyushPractitioner
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${!isAyushPractitioner
                       ? 'bg-gradient-to-r from-teal-400 to-cyan-500 text-slate-950 shadow-md font-black'
                       : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <Stethoscope className="w-3.5 h-3.5" />
                   <span>Allopathic Medicine</span>
@@ -316,11 +301,10 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                     value={loginId}
                     onChange={handleLoginIdChange}
                     placeholder="e.g. dr.anand or dr.rajesh"
-                    className={`w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 transition-all shadow-inner border ${
-                      isDark
+                    className={`w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 transition-all shadow-inner border ${isDark
                         ? 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-cyan-400 focus:ring-cyan-500/30'
                         : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:ring-cyan-500/20'
-                    }`}
+                      }`}
                   />
                 </div>
               </div>
@@ -339,11 +323,10 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className={`w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 transition-all shadow-inner border ${
-                      isDark
+                    className={`w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 transition-all shadow-inner border ${isDark
                         ? 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-cyan-400 focus:ring-cyan-500/30'
                         : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:ring-cyan-500/20'
-                    }`}
+                      }`}
                   />
                 </div>
               </div>
@@ -378,9 +361,8 @@ export const LoginPage = ({ onLoginSuccess, theme = 'dark', onToggleTheme }) => 
       </main>
 
       {/* Institutional Footer */}
-      <footer className={`relative z-10 w-full backdrop-blur-xl border-t px-4 sm:px-8 py-2.5 flex flex-col sm:flex-row items-center justify-between text-xs gap-2 text-center sm:text-left ${
-        isDark ? 'bg-slate-900/90 border-slate-800/80 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-600'
-      }`}>
+      <footer className={`relative z-10 w-full backdrop-blur-xl border-t px-4 sm:px-8 py-2.5 flex flex-col sm:flex-row items-center justify-between text-xs gap-2 text-center sm:text-left ${isDark ? 'bg-slate-900/90 border-slate-800/80 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-600'
+        }`}>
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-teal-500 shrink-0" />
           <span>DPDP Act 2023 & Ayushman Bharat (ABDM) Compliant Doctor Node</span>

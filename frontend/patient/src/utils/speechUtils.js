@@ -4,6 +4,7 @@
  * Hindi (hi-IN), English (en-IN), Gujarati (gu-IN), Marathi (mr-IN), Tamil (ta-IN), Bengali (bn-IN).
  */
 import { SUPPORTED_LANGUAGES, getLanguageConfig } from '../constants/languages';
+import { apiSarvamTts } from '../services/api';
 
 export const getAvailableVoices = () => {
   return new Promise((resolve) => {
@@ -24,32 +25,15 @@ export const getAvailableVoices = () => {
   });
 };
 
-export const speakPhrase = async (text, langCodeOrName) => {
+/**
+ * Fallback browser SpeechSynthesis speaker
+ */
+const _speakWithBrowser = async (text, targetLang) => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel(); // Stop any pending speech
 
   const voices = await getAvailableVoices();
   const utterance = new SpeechSynthesisUtterance(text);
-
-  // Resolve target language code (e.g. 'mr-IN', 'ta-IN', 'bn-IN', 'hi-IN', 'gu-IN', 'en-IN')
-  let targetLang = 'hi-IN';
-  if (SUPPORTED_LANGUAGES[langCodeOrName]) {
-    targetLang = SUPPORTED_LANGUAGES[langCodeOrName].code;
-  } else if (typeof langCodeOrName === 'string') {
-    const matched = Object.values(SUPPORTED_LANGUAGES).find(
-      (cfg) =>
-        cfg.code.toLowerCase() === langCodeOrName.toLowerCase() ||
-        cfg.short.toLowerCase() === langCodeOrName.toLowerCase()
-    );
-    if (matched) {
-      targetLang = matched.code;
-    } else if (langCodeOrName.includes('-')) {
-      targetLang = langCodeOrName;
-    } else {
-      targetLang = `${langCodeOrName}-IN`;
-    }
-  }
-
   const shortCode = targetLang.slice(0, 2).toLowerCase();
 
   // Look for exact language match or prefix match (e.g. 'mr-IN', 'mr_IN', 'mr')
@@ -86,6 +70,58 @@ export const speakPhrase = async (text, langCodeOrName) => {
     };
     window.speechSynthesis.speak(utterance);
   });
+};
+
+export const speakPhrase = async (text, langCodeOrName) => {
+  if (!text) return;
+
+  // Resolve target language code (e.g. 'mr-IN', 'ta-IN', 'bn-IN', 'hi-IN', 'gu-IN', 'en-IN')
+  let targetLang = 'hi-IN';
+  if (SUPPORTED_LANGUAGES[langCodeOrName]) {
+    targetLang = SUPPORTED_LANGUAGES[langCodeOrName].code;
+  } else if (typeof langCodeOrName === 'string') {
+    const matched = Object.values(SUPPORTED_LANGUAGES).find(
+      (cfg) =>
+        cfg.code.toLowerCase() === langCodeOrName.toLowerCase() ||
+        cfg.short.toLowerCase() === langCodeOrName.toLowerCase()
+    );
+    if (matched) {
+      targetLang = matched.code;
+    } else if (langCodeOrName.includes('-')) {
+      targetLang = langCodeOrName;
+    } else {
+      targetLang = `${langCodeOrName}-IN`;
+    }
+  }
+
+  // 1. Primary Attempt: High-Naturalness Indian Voice via Sarvam Bulbul AI
+  try {
+    const ttsRes = await apiSarvamTts(text, targetLang);
+    if (ttsRes && ttsRes.success && ttsRes.audio_base64) {
+      return new Promise((resolve) => {
+        try {
+          const audio = new Audio(`data:audio/wav;base64,${ttsRes.audio_base64}`);
+          audio.onended = () => resolve();
+          audio.onerror = (err) => {
+            console.warn('[Sarvam TTS Audio tag error, falling back]:', err);
+            _speakWithBrowser(text, targetLang).then(resolve);
+          };
+          audio.play().catch((playErr) => {
+            console.warn('[Sarvam Audio Play blocked/failed, falling back]:', playErr);
+            _speakWithBrowser(text, targetLang).then(resolve);
+          });
+        } catch (audioInitErr) {
+          console.warn('[Sarvam Audio Init failed]:', audioInitErr);
+          _speakWithBrowser(text, targetLang).then(resolve);
+        }
+      });
+    }
+  } catch (sarvamErr) {
+    console.warn('[Sarvam TTS service unavailable, falling back]:', sarvamErr);
+  }
+
+  // 2. Resilient Fallback: Standard Browser Web Speech Synthesis
+  return _speakWithBrowser(text, targetLang);
 };
 
 export default {

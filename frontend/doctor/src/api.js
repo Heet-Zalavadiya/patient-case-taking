@@ -108,7 +108,95 @@ export async function loginDoctor(credentials) {
   }
 }
 
+const COMPLETED_PATIENTS_STORAGE_KEY = 'medikiosk_completed_patient_ids';
+
+/**
+ * Get set of patient IDs that have been completed during this clinic session
+ */
+export function getCompletedPatientIds() {
+  try {
+    const raw = localStorage.getItem(COMPLETED_PATIENTS_STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
+  } catch (e) {
+    console.warn('[api] Could not read completed patient IDs:', e);
+    return new Set();
+  }
+}
+
+/**
+ * Save a patient as completed in local storage and notify backend database
+ */
+export async function markPatientAsCompleted(patientId, sessionId = null) {
+  if (!patientId) return;
+  const pIdStr = String(patientId);
+
+  // 1. Immediately persist to localStorage
+  try {
+    const current = getCompletedPatientIds();
+    current.add(pIdStr);
+    // Also add normalized variant (e.g. pat_001 -> 1)
+    const norm = String(normalizePatientId(patientId));
+    current.add(norm);
+    localStorage.setItem(COMPLETED_PATIENTS_STORAGE_KEY, JSON.stringify(Array.from(current)));
+  } catch (e) {
+    console.warn('[api] Could not write completed patient ID to storage:', e);
+  }
+
+  // 2. Dispatch cross-component custom event so all active hooks update immediately
+  try {
+    window.dispatchEvent(new CustomEvent('medikiosk_queue_updated', { detail: { patientId: pIdStr } }));
+  } catch (e) {
+    // Ignore in non-browser context
+  }
+
+  // 3. Inform backend API
+  try {
+    await fetchWithTimeout(`${BASE_URL}/api/v1/queue/${patientId}/complete`, {
+      method: 'POST'
+    });
+  } catch (err1) {
+    try {
+      await fetchWithTimeout(`${BASE_URL}/queue/${patientId}/complete`, {
+        method: 'POST'
+      });
+    } catch (err2) {
+      // Offline/fallback mode handles this gracefully via localStorage
+    }
+  }
+
+  // 4. Also mark session summary as ACCEPTED if sessionId provided
+  if (sessionId) {
+    try {
+      await updateSessionSummary(sessionId, { status: 'ACCEPTED' }, patientId);
+    } catch (e) {
+      // Silent fail
+    }
+  }
+}
+
+/**
+ * Reset completed patient tracking (useful for tests and demo cycles)
+ */
+export async function resetCompletedPatients() {
+  try {
+    localStorage.removeItem(COMPLETED_PATIENTS_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent('medikiosk_queue_updated', { detail: { reset: true } }));
+  } catch (e) {
+    console.warn('[api] Could not clear completed patients:', e);
+  }
+
+  try {
+    await fetchWithTimeout(`${BASE_URL}/api/v1/queue/reset`, { method: 'POST' });
+  } catch (e) {
+    // Silent
+  }
+}
+
 export async function fetchPatientsQueue() {
+  const completedIds = getCompletedPatientIds();
+
   try {
     let res = await fetchWithTimeout(`${BASE_URL}/api/v1/patients`);
     if (!res.ok) {
@@ -117,9 +205,28 @@ export async function fetchPatientsQueue() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : data.patients || mockPatients;
-    return { data: list.length > 0 ? list : mockPatients, isLive: true, error: null };
+    const baseList = list.length > 0 ? list : mockPatients;
+
+    const enriched = baseList.map((p) => {
+      const pIdStr = String(p.patient_id);
+      const isCompleted = completedIds.has(pIdStr) || p.status === 'completed';
+      return {
+        ...p,
+        status: isCompleted ? 'completed' : (p.status || 'waiting')
+      };
+    });
+
+    return { data: enriched, isLive: true, error: null };
   } catch (err) {
-    return { data: mockPatients, isLive: false, error: err.message };
+    const enriched = mockPatients.map((p) => {
+      const pIdStr = String(p.patient_id);
+      const isCompleted = completedIds.has(pIdStr) || p.status === 'completed';
+      return {
+        ...p,
+        status: isCompleted ? 'completed' : (p.status || 'waiting')
+      };
+    });
+    return { data: enriched, isLive: false, error: err.message };
   }
 }
 
@@ -269,3 +376,92 @@ export async function updateSessionSummary(sessionId, payload, patientId = null)
     };
   }
 }
+
+/**
+ * Local resilient clinical brief generator if backend or Gemini API is offline
+ */
+export function generateLocalPatientSummary(patientData) {
+  const chief =
+    patientData?.chief_complaint ||
+    patientData?.demo_chief_complaint ||
+    'General medical case consultation';
+  const painLocs = patientData?.pain_locations || patientData?.painLocations || [];
+  const locStr = Array.isArray(painLocs) ? painLocs.join(', ') : String(painLocs || '');
+  const alert = patientData?.activeAlert || (patientData?.alerts && patientData.alerts[0]);
+  const isEmergency = alert && (alert.severity === 'HIGH' || patientData?.has_red_flags);
+  const vitals = patientData?.vitals_summary || patientData?.vitals;
+
+  const bullets = [
+    `Chief Complaint: ${chief}`,
+    locStr ? `Pain Location: Pinpointed at ${locStr}` : `Pain Location: No localized musculoskeletal pain specified`,
+    isEmergency
+      ? `Emergency Alert: ${alert?.flag_description || 'High-priority symptom flagged during intake'}`
+      : `Emergency Status: Standard clinical priority; no critical red flags detected`,
+    patientData?.hpi_onset
+      ? `Onset & Duration: ${patientData.hpi_onset}`
+      : `Clinical Course: Presenting for primary OPD evaluation`,
+    vitals
+      ? `Triage Vitals: BP ${vitals.bp || '120/80'}, Pulse ${vitals.pulse || '76 bpm'}, SpO2 ${vitals.spo2 || '98%'}`
+      : `Intake Status: Completed via MediKiosk digital kiosk intake terminal`
+  ];
+
+  return {
+    patient_id: patientData?.patient_id,
+    one_line_summary: chief.split('.')[0].trim().slice(0, 115),
+    summary_bullets: bullets,
+    cached: false,
+    source: 'local_fallback'
+  };
+}
+
+/**
+ * AI-Generated Short Patient Summary for Doctor Console (with dual caching)
+ */
+export async function fetchDoctorPatientSummary(patientId, patientData, forceRefresh = false) {
+  const cacheKey = `medikiosk_doc_summary_${patientId}`;
+
+  if (!forceRefresh) {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.summary_bullets?.length > 0) {
+          return { data: { ...parsed, cached: true }, isLive: true, error: null };
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  try {
+    const res = await fetchWithTimeout(
+      `${BASE_URL}/api/doctor/summarize-patient`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          patient_id: String(patientId),
+          patient_data: patientData || {}
+        })
+      },
+      8000
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {}
+      return { data, isLive: true, error: null };
+    }
+  } catch (err) {
+    console.warn(`[api] summarize-patient API note: ${err.message}. Using intelligent clinical fallback.`);
+  }
+
+  const fallback = generateLocalPatientSummary(patientData);
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(fallback));
+  } catch (e) {}
+  return { data: fallback, isLive: false, error: null };
+}
+

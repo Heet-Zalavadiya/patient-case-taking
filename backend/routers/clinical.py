@@ -250,6 +250,7 @@ async def create_document(
         db.refresh(document)
 
         # ── Persist extracted medications ─────────────────────────────────────
+        med_strings = []
         for med in ocr_result.get("medications", []):
             db.add(DocumentExtractedMedication(
                 document_id=document.document_id,
@@ -258,6 +259,16 @@ async def create_document(
                 frequency=med.get("frequency"),
                 duration=med.get("duration"),
             ))
+            parts = [med.get("medicine_name", "").strip()]
+            if med.get("dosage"):
+                parts.append(med.get("dosage").strip())
+            if med.get("frequency"):
+                parts.append(f"({med.get('frequency').strip()})")
+            if med.get("duration"):
+                parts.append(f"x {med.get('duration').strip()}")
+            m_str = " ".join([p for p in parts if p]).strip()
+            if m_str:
+                med_strings.append(m_str)
 
         # ── Persist extracted lab values ──────────────────────────────────────
         for lab in ocr_result.get("lab_values", []):
@@ -269,6 +280,15 @@ async def create_document(
                 reference_range=lab.get("reference_range"),
                 is_abnormal=bool(lab.get("is_abnormal", False)),
             ))
+            val_parts = [lab.get("test_name", "").strip()]
+            res_val = f"{lab.get('result_value', '')} {lab.get('unit', '')}".strip()
+            if res_val:
+                val_parts.append(f"— {res_val}")
+            if lab.get("is_abnormal"):
+                val_parts.append("(Abnormal)")
+            l_str = " ".join(val_parts).strip()
+            if l_str:
+                med_strings.append(l_str)
 
         # ── Persist extracted conditions / diagnoses ───────────────────────────
         for cond in ocr_result.get("conditions", []):
@@ -278,10 +298,15 @@ async def create_document(
                 description=cond.get("description", ""),
                 entity_date=cond.get("entity_date"),
             ))
+            c_type = cond.get("entity_type", "Diagnosis").capitalize()
+            c_desc = cond.get("description", "").strip()
+            if c_desc:
+                med_strings.append(f"{c_type}: {c_desc}")
 
         db.commit()
         db.refresh(document)
-        return document
+        response_doc = MedicalDocumentResponse.model_validate(document)
+        return response_doc.model_copy(update={"extracted_medications": med_strings})
 
     else:
         # ── JSON body path (pre-processed / metadata-only) ────────────────────

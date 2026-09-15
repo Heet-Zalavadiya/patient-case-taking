@@ -337,14 +337,10 @@ export const apiUploadDocument = async (formData) => {
       session_id: Number(formData?.get?.('session_id') || 1),
       document_type: formData?.get?.('document_type') || 'prescription',
       file_path: '/uploads/documents/scanned_doc.jpg',
-      ocr_status: 'processed',
-      ocr_raw_text: 'Extracted: Tab Paracetamol 500mg (BD), Tab Atorvastatin 20mg (HS), Ashwagandha Churna (3g with milk).',
+      ocr_status: 'failed',
+      ocr_raw_text: 'Could not extract clear information from this document. Please verify manually.',
       uploaded_at: new Date().toISOString(),
-      extracted_medications: [
-        'Paracetamol 500mg (BD)',
-        'Atorvastatin 20mg (HS)',
-        'Ashwagandha Churna (3g with milk)'
-      ]
+      extracted_medications: []
     };
   }
 };
@@ -384,6 +380,102 @@ export const generateClinicalSummary = apiGenerateSummary;
 export const uploadDocument = apiUploadDocument;
 export const uploadMedicalDocument = apiUploadDocument;
 export const getPatientDocuments = apiGetPatientDocuments;
+
+/**
+ * Validate patient chief complaint input via Gemini AI
+ * Checks whether text describes real symptom/illness or unrelated text
+ */
+export const apiValidateComplaint = async (text) => {
+  try {
+    const res = await apiClient.post('/api/validate-complaint', { text }, { timeout: 9000 });
+    return res.data;
+  } catch (err) {
+    console.warn('apiValidateComplaint primary attempt error, retrying:', err);
+    try {
+      const retryRes = await apiClient.post('/api/validate-complaint', { text }, { timeout: 9000 });
+      return retryRes.data;
+    } catch (retryErr) {
+      console.error('apiValidateComplaint retry failed, failing open:', retryErr);
+      return { is_valid: true, status: 'VALID', fallback: true };
+    }
+  }
+};
+
+/**
+ * i) GET ACTIVE DOCTOR QUEUE / PATIENTS
+ * GET /queue or GET /patients
+ */
+export const apiGetDoctorQueue = async () => {
+  try {
+    const res = await apiClient.get('/queue');
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    try {
+      const res2 = await apiClient.get('/patients');
+      return Array.isArray(res2.data) ? res2.data : [];
+    } catch (e) {
+      return [];
+    }
+  }
+};
+
+/**
+ * ── Sarvam AI Integration (Speech-to-Text, Normalization, TTS) ───────────────
+ */
+
+export const apiGetSarvamStatus = async () => {
+  try {
+    const res = await apiClient.get('/api/sarvam/status', { timeout: 3000 });
+    return res.data;
+  } catch (err) {
+    return { enabled: false, has_api_key: false, fallback: true };
+  }
+};
+
+export const apiSarvamStt = async (audioBlob, languageCode = 'hi-IN') => {
+  try {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+    formData.append('language_code', languageCode);
+
+    const res = await apiClient.post('/api/sarvam/stt', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 12000
+    });
+    return res.data;
+  } catch (err) {
+    console.warn('apiSarvamStt failed, falling back to browser speech:', err.message);
+    return { success: false, transcript: '', fallback: true, error: err.message };
+  }
+};
+
+export const apiSarvamNormalize = async (text, sourceLanguage = 'auto', targetLanguage = 'en-IN') => {
+  try {
+    const res = await apiClient.post('/api/sarvam/normalize', {
+      text,
+      source_language: sourceLanguage,
+      target_language: targetLanguage
+    }, { timeout: 8000 });
+    return res.data;
+  } catch (err) {
+    console.warn('apiSarvamNormalize failed, using original text:', err.message);
+    return { success: false, original_text: text, normalized_text: text, translated_text: text, fallback: true };
+  }
+};
+
+export const apiSarvamTts = async (text, languageCode = 'hi-IN', speaker = 'meera') => {
+  try {
+    const res = await apiClient.post('/api/sarvam/tts', {
+      text,
+      language_code: languageCode,
+      speaker
+    }, { timeout: 9000 });
+    return res.data;
+  } catch (err) {
+    console.warn('apiSarvamTts failed, falling back to browser synthesis:', err.message);
+    return { success: false, audio_base64: null, fallback: true, error: err.message };
+  }
+};
 
 export default {
   BASE_URL,

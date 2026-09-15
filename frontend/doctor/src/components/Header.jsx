@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  HeartPulse, 
-  Clock, 
-  AlertTriangle, 
-  Flame, 
-  LogOut, 
-  UserCheck, 
-  Users, 
+import {
+  HeartPulse,
+  Clock,
+  AlertTriangle,
+  Flame,
+  LogOut,
+  UserCheck,
+  Users,
   Sparkles,
   ArrowLeft,
   Activity,
@@ -14,10 +14,10 @@ import {
   Moon
 } from 'lucide-react';
 
-export const Header = ({ 
-  currentDoctor, 
-  onSwitchDoctor, 
-  onLogout, 
+export const Header = ({
+  currentDoctor,
+  onSwitchDoctor,
+  onLogout,
   activeRedFlagsCount = 0,
   waitingPatientsCount = 0,
   onNavigateHome,
@@ -50,17 +50,17 @@ export const Header = ({
 
   const initials = currentDoctor?.name
     ? currentDoctor.name
-        .split(' ')
-        .filter(n => !n.startsWith('Dr.'))
-        .map(n => n[0])
-        .join('')
-        .slice(0, 2)
+      .split(' ')
+      .filter(n => !n.startsWith('Dr.'))
+      .map(n => n[0])
+      .join('')
+      .slice(0, 2)
     : 'MD';
 
   return (
     <header className="relative z-30 w-full bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between shadow-lg">
       {/* Left: Branding & Portal Identity */}
-      <div 
+      <div
         onClick={onNavigateHome}
         className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group min-w-0"
       >
@@ -72,12 +72,12 @@ export const Header = ({
             <h1 className="text-lg sm:text-2xl font-black tracking-tight text-white m-0 p-0 leading-none">
               Medi<span className="text-cyan-400">Kiosk</span>
             </h1>
-            
-            
+
+
             <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] sm:text-[11px] font-bold text-emerald-400 uppercase tracking-wider whitespace-nowrap">
               {currentDoctor?.is_ayush_practitioner ? 'AYUSH #14' : 'OPD #104'}
             </span>
-            
+
             {isDetailView && (
               <span className="hidden md:inline-flex px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 uppercase tracking-wider">
                 Case Sheet Active
@@ -123,7 +123,7 @@ export const Header = ({
 
         {/* Doctor Identity Pill */}
         {currentDoctor && (
-          <div 
+          <div
             title={`${currentDoctor.name} (${currentDoctor.active_opd_room || 'OPD'})`}
             className="flex items-center gap-2 bg-slate-800/80 border border-slate-700 rounded-xl p-1 sm:px-2.5 sm:py-1.5"
           >

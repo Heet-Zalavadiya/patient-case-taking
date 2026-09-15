@@ -21,8 +21,12 @@ import usePatientQueue from '../hooks/usePatientQueue';
 
 export const PatientListPage = ({
   currentDoctor,
-  onSelectPatient
+  onSelectPatient,
+  queueState
 }) => {
+  const internalQueue = usePatientQueue();
+  const queue = queueState || internalQueue;
+
   const {
     patients,
     patientHistories,
@@ -37,9 +41,10 @@ export const PatientListPage = ({
     setActiveFilter,
     filteredPatients,
     counts,
+    resetAllCompleted,
     refetch,
     retry
-  } = usePatientQueue();
+  } = queue;
 
   const totalCount = counts.total;
   const highRedFlagsCount = counts.redFlags;
@@ -132,15 +137,14 @@ export const PatientListPage = ({
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
-                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  isSelected
+                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${isSelected
                     ? isRedFlagTab
                       ? 'bg-rose-600 text-white shadow-lg shadow-rose-950/50 animate-alert-pulse font-black'
                       : 'bg-cyan-500/25 text-cyan-200 border-2 border-cyan-400 shadow-lg shadow-cyan-950/40 font-black'
                     : isRedFlagTab
-                    ? 'bg-slate-900/80 text-rose-300 hover:bg-rose-950/40 border border-rose-900/60'
-                    : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:bg-slate-900'
-                }`}
+                      ? 'bg-slate-900/80 text-rose-300 hover:bg-rose-950/40 border border-rose-900/60'
+                      : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:bg-slate-900'
+                  }`}
               >
                 {tab === 'Red-Flags' ? (
                   <span className="flex items-center gap-1.5">
@@ -205,175 +209,148 @@ export const PatientListPage = ({
 
       {/* Patients Queue List */}
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-slate-900/90 rounded-3xl p-7 border border-slate-800 animate-pulse">
-              <div className="flex items-center gap-5">
-                <div className="w-20 h-20 bg-slate-800 rounded-2xl" />
-                <div className="space-y-3 flex-1">
-                  <div className="h-5 bg-slate-800 rounded w-1/3" />
-                  <div className="h-4 bg-slate-800 rounded w-2/3" />
-                </div>
-              </div>
+            <div key={n} className="bg-slate-900/80 rounded-2xl p-5 border border-slate-800 animate-pulse">
+              <div className="h-5 bg-slate-800 rounded w-1/3 mb-2" />
+              <div className="h-4 bg-slate-800 rounded w-2/3" />
             </div>
           ))}
         </div>
       ) : filteredPatients.length === 0 ? (
-        <div className="bg-slate-900/90 rounded-3xl p-14 text-center border border-slate-800 shadow-xl">
-          <User className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-slate-200">No matching patients in queue</h3>
-          <p className="text-sm text-slate-400 mt-1">Try adjusting your search query or switching filter pills.</p>
+        <div className="bg-slate-900/80 rounded-2xl p-10 text-center border border-slate-800 shadow-md space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-slate-800 text-cyan-400 flex items-center justify-center mx-auto shadow-inner">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-black text-white">
+              {counts.waiting === 0 && counts.total > 0 && activeFilter !== 'Completed'
+                ? 'No more patients in queue'
+                : 'No matching patients found'}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+              {counts.waiting === 0 && counts.total > 0 && activeFilter !== 'Completed'
+                ? 'All patients in this OPD queue have been consulted and committed to ABDM.'
+                : 'Try adjusting your search keywords or choosing another filter tab above.'}
+            </p>
+          </div>
+          {counts.completed > 0 && activeFilter !== 'Completed' && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveFilter('Completed')}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-750 text-cyan-300 border border-slate-700 transition cursor-pointer"
+              >
+                View Completed Cases ({counts.completed})
+              </button>
+              {resetAllCompleted && (
+                <button
+                  type="button"
+                  onClick={() => resetAllCompleted()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition cursor-pointer"
+                >
+                  Reset Demo Queue
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : (
-        /* Patient Cards List (Bigger & Structured) */
-        <div className="grid grid-cols-1 gap-5">
+        /* Simplified, High-Clarity Patient Queue Rows */
+        <div className="space-y-3 sm:space-y-4">
           {filteredPatients.map((patient) => {
             const history = patientHistories[patient.patient_id] || {};
-            const alert = alerts.find((a) => a.patient_id === patient.patient_id || a.session_id === patient.session_id);
-            const isHighRedFlag = alert && alert.severity === 'HIGH';
-            const rawStatus = patient.status || 'waiting';
-            const statusDisplay = typeof rawStatus === 'string' ? rawStatus.replace('_', ' ') : 'waiting';
+            const alert = alerts.find(
+              (a) => a.patient_id === patient.patient_id || a.session_id === patient.session_id
+            );
+            const isHighRedFlag = Boolean(
+              patient.has_red_flags || (alert && alert.severity === 'HIGH')
+            );
+
+            // 1-line chief complaint summary
+            const oneLineComplaint =
+              history.one_line_summary ||
+              history.chief_complaint ||
+              patient.demo_chief_complaint ||
+              'General medical consultation intake';
 
             return (
               <div
                 key={patient.patient_id}
                 onClick={() => onSelectPatient(patient.patient_id)}
-                className={`bg-slate-900/95 backdrop-blur-xl rounded-3xl p-6 sm:p-7 border transition-all cursor-pointer card-hover-effect relative group ${
-                  isHighRedFlag
-                    ? 'border-rose-500/50 bg-slate-900/95 hover:border-rose-400 shadow-2xl shadow-rose-950/30'
-                    : 'border-slate-800 hover:border-cyan-500/60 shadow-xl shadow-cyan-950/10'
-                }`}
+                className={`rounded-2xl p-4 sm:p-5 border transition-all cursor-pointer relative group ${isHighRedFlag
+                    ? 'border-rose-500/70 border-l-8 border-l-rose-500 bg-slate-900/95 hover:bg-slate-900 shadow-xl shadow-rose-950/30'
+                    : 'border-slate-800 bg-slate-900/80 hover:border-cyan-500/50 hover:bg-slate-900 shadow-sm'
+                  }`}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  {/* Left: Token, Demographics, Chief Complaint, Vitals */}
-                  <div className="flex items-start gap-5 flex-1 min-w-0">
-                    {/* Token Badge */}
-                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold shrink-0 shadow-inner px-1 ${
-                      isHighRedFlag
-                        ? 'bg-rose-950 text-rose-300 border border-rose-500/60 animate-alert-pulse'
-                        : 'bg-slate-950 text-cyan-400 border border-slate-800'
-                    }`}>
-                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">Token</span>
-                      <span className="text-xs sm:text-sm font-black tracking-tight font-mono whitespace-nowrap text-center">
-                        {patient.token || patient.queue_number || `A-${100 + patient.patient_id}`}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Left Column: Demographics + 1-Line Complaint */}
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {/* Top Row: Token, Name, Demographics, Urgency Badge, Wait Time */}
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-black ${isHighRedFlag
+                            ? 'bg-rose-950 text-rose-300 border border-rose-500/50'
+                            : 'bg-slate-950 text-cyan-400 border border-slate-800'
+                          }`}
+                      >
+                        #{patient.token || patient.queue_number || `A-${100 + patient.patient_id}`}
+                      </span>
+
+                      <h3 className="text-base sm:text-lg font-black text-white group-hover:text-cyan-300 transition">
+                        {patient.full_name || 'Walk-in Patient'}
+                      </h3>
+
+                      <span className="text-xs sm:text-sm text-slate-400 font-bold">
+                        {patient.age || '35'} Yrs • {patient.gender || 'Male'}
+                      </span>
+
+                      {/* Urgency / Emergency Flag */}
+                      {isHighRedFlag ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-600 text-white shadow-sm animate-pulse">
+                          <Flame className="w-3.5 h-3.5" />
+                          <span>URGENT / EMERGENCY</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                          Routine OPD
+                        </span>
+                      )}
+
+                      {/* Wait Time */}
+                      <span className="text-xs text-slate-400 font-medium flex items-center gap-1 ml-auto lg:ml-0">
+                        <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Arrived {patient.check_in_time || 'Just now'}</span>
                       </span>
                     </div>
 
-                    {/* Patient Core Info */}
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-white group-hover:text-cyan-300 transition">
-                          {patient.full_name || 'Walk-in Patient'}
-                        </h3>
-                        <span className="text-sm text-slate-300 font-bold">
-                          {patient.age || '35'} Yrs • {patient.gender || 'Male'}
+                    {/* 1-Line Chief Complaint Summary */}
+                    <div className="pt-0.5">
+                      <p className="text-sm sm:text-base font-semibold text-slate-200 leading-snug line-clamp-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1.5">
+                          Problem:
                         </span>
-                        <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-lg bg-slate-950 text-slate-300 border border-slate-800">
-                          MRN: {patient.mrn || `MRN-2026-0${patient.patient_id}`}
-                        </span>
-
-                        {/* High Red Flag Badge */}
-                        {isHighRedFlag ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-600 text-white shadow-md animate-alert-pulse">
-                            <Flame className="w-4 h-4" />
-                            <span>EMERGENCY: {alert.flag_description ? alert.flag_description.split(':')[0] : 'HIGH RED-FLAG'}</span>
-                          </span>
-                        ) : (
-                          <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                            {history.dominant_dosha || 'Pitta-Vata Intake'}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Red-Flag Description Banner */}
-                      {isHighRedFlag && (
-                        <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs sm:text-sm font-bold text-rose-200 leading-snug">
-                          ⚠️ {alert.flag_description}
-                        </div>
-                      )}
-
-                      {/* Chief Complaint Preview (Bigger Font) */}
-                      <div className="flex items-baseline gap-2.5 pt-0.5">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">
-                          Chief Complaint:
-                        </span>
-                        <p className="text-sm sm:text-base font-bold text-slate-100 line-clamp-2 leading-relaxed">
-                          {history.chief_complaint || patient.demo_chief_complaint || 'Pending clinical history intake...'}
-                        </p>
-                      </div>
-
-                      {/* Associated Symptoms Tags */}
-                      {history.hpi_associated_symptoms && history.hpi_associated_symptoms.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap pt-1">
-                          <span className="text-xs font-bold text-slate-400 uppercase">Symptoms:</span>
-                          {history.hpi_associated_symptoms.slice(0, 3).map((symptom, sIdx) => (
-                            <span
-                              key={sIdx}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-200"
-                            >
-                              {symptom}
-                            </span>
-                          ))}
-                          {history.hpi_associated_symptoms.length > 3 && (
-                            <span className="text-xs text-slate-400 font-bold">
-                              +{history.hpi_associated_symptoms.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Vitals Ribbon */}
-                      {patient.vitals_summary && (
-                        <div className="flex items-center gap-2.5 pt-1 flex-wrap text-xs sm:text-sm font-mono font-bold">
-                          <span className={`px-2.5 py-1 rounded-lg border ${
-                            patient.vitals_summary.bp?.includes('168')
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-black'
-                              : 'bg-slate-950 text-slate-200 border border-slate-800'
-                          }`}>
-                            BP: {patient.vitals_summary.bp || '120/80'}
-                          </span>
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-slate-200 border border-slate-800">
-                            Pulse: {patient.vitals_summary.pulse || '76 bpm'}
-                          </span>
-                          <span className={`px-2.5 py-1 rounded-lg border ${
-                            parseInt(patient.vitals_summary.spo2 || '98') < 94
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-black'
-                              : 'bg-slate-950 text-slate-200 border border-slate-800'
-                          }`}>
-                            SpO2: {patient.vitals_summary.spo2 || '98%'}
-                          </span>
-                        </div>
-                      )}
+                        {oneLineComplaint}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Right: Arrived Time & Open Action Button */}
-                  <div className="flex lg:flex-col items-center lg:items-end justify-between border-t lg:border-t-0 border-slate-800 pt-4 lg:pt-0 gap-3 shrink-0">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-300 font-medium">
-                      <Clock className="w-4 h-4 text-cyan-400" />
-                      <span>Arrived {patient.check_in_time || 'Just now'}</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs font-bold px-3 py-1 rounded-xl uppercase ${
-                        rawStatus === 'in_consultation'
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                          : rawStatus === 'completed'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-slate-800 text-slate-200 border border-slate-700'
-                      }`}>
-                        {statusDisplay}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="px-5 py-3 rounded-2xl bg-slate-800 group-hover:bg-gradient-to-r group-hover:from-teal-400 group-hover:to-cyan-400 group-hover:text-slate-950 text-slate-100 text-xs sm:text-sm font-black flex items-center gap-2 transition border border-slate-700 shadow-md min-h-[44px]"
-                      >
-                        <span>Open Case Sheet</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* Right Column: View Full Case Primary Action */}
+                  <div className="flex items-center justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectPatient(patient.patient_id);
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${isHighRedFlag
+                          ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/40'
+                          : 'bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 text-slate-950 shadow-cyan-500/20'
+                        }`}
+                    >
+                      <span>View Full Case</span>
+                      <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+                    </button>
                   </div>
                 </div>
               </div>

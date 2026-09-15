@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  CheckCircle2, 
-  Printer, 
-  ArrowLeft, 
-  User, 
-  Building2, 
-  Clock, 
-  ShieldCheck, 
-  Sparkles, 
-  Pill, 
-  Utensils, 
-  Ban, 
-  QrCode, 
+import {
+  CheckCircle2,
+  Printer,
+  ArrowLeft,
+  User,
+  Building2,
+  Clock,
+  ShieldCheck,
+  Sparkles,
+  Pill,
+  Utensils,
+  Ban,
+  QrCode,
   ChevronRight,
   Share2,
   FileCheck2,
@@ -48,7 +48,7 @@ export const SignedConsultationView = ({
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col space-y-6 animate-in fade-in duration-300">
-      
+
       {/* 1. Milestone Banner */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-950/40">
@@ -65,11 +65,11 @@ export const SignedConsultationView = ({
 
       {/* 2. Main Grid: Signed Case Slip (Left) & Clinical Prescription (Right) */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
+
         {/* LEFT COLUMN: Official Signed OPD Case Slip (lg:col-span-5) */}
         <div className="lg:col-span-5 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-emerald-500/60 rounded-3xl p-6 shadow-2xl shadow-emerald-950/50 flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div>
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
@@ -151,7 +151,7 @@ export const SignedConsultationView = ({
 
         {/* RIGHT COLUMN: Clinical Summary & Prescriptions (lg:col-span-7) */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-          
+
           {/* Active Diagnostic Summary Card */}
           <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
