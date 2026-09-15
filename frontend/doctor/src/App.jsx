@@ -183,17 +183,16 @@ export function App() {
   }
 
   return (
-    <div className={`min-h-screen w-full flex flex-col relative overflow-x-hidden font-sans transition-colors duration-200 ${
-      theme === 'dark'
+    <div className={`min-h-screen w-full flex flex-col relative overflow-x-hidden font-sans transition-colors duration-200 ${theme === 'dark'
         ? 'dark bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950'
         : 'light bg-slate-50 text-slate-900 selection:bg-cyan-500 selection:text-white'
-    }`}>
+      }`}>
       {/* Background Medical Ambient Glow & Grid Lines matching Patient UI */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-cyan-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[350px] bg-teal-600/10 rounded-full blur-[140px]" />
-        <div 
-          className="absolute inset-0 opacity-[0.03]" 
+        <div
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.8) 1px, transparent 0)`,
             backgroundSize: '36px 36px'
@@ -204,13 +203,12 @@ export function App() {
       {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 animate-bounce">
-          <div className={`px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 ${
-            toastMessage.type === 'warning'
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 ${toastMessage.type === 'warning'
               ? 'bg-rose-950/95 border-rose-500/50 text-rose-200'
               : toastMessage.type === 'info'
-              ? 'bg-sky-950/95 border-sky-500/50 text-sky-200'
-              : 'bg-slate-900/95 border-emerald-500/50 text-emerald-300'
-          }`}>
+                ? 'bg-sky-950/95 border-sky-500/50 text-sky-200'
+                : 'bg-slate-900/95 border-emerald-500/50 text-emerald-300'
+            }`}>
             <span>{toastMessage.message}</span>
           </div>
         </div>
@@ -245,30 +243,27 @@ export function App() {
                   key={step.number}
                   type="button"
                   onClick={() => handleStepClick(step.number)}
-                  className={`group flex items-center gap-1.5 sm:gap-3 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all text-left cursor-pointer min-w-0 ${
-                    isCurrent
+                  className={`group flex items-center gap-1.5 sm:gap-3 p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all text-left cursor-pointer min-w-0 ${isCurrent
                       ? 'bg-cyan-500/15 border border-cyan-500/40 shadow-md shadow-cyan-500/10'
                       : isCompleted
-                      ? 'bg-slate-900/40 border border-teal-500/30 text-teal-300'
-                      : 'bg-slate-950/30 border border-slate-800/50 text-slate-500 hover:border-slate-700'
-                  }`}
+                        ? 'bg-slate-900/40 border border-teal-500/30 text-teal-300'
+                        : 'bg-slate-950/30 border border-slate-800/50 text-slate-500 hover:border-slate-700'
+                    }`}
                 >
                   <div
-                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-[11px] sm:text-sm shrink-0 transition-all ${
-                      isCompleted
+                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-[11px] sm:text-sm shrink-0 transition-all ${isCompleted
                         ? 'bg-teal-500 text-slate-950 shadow-sm'
                         : isCurrent
-                        ? 'bg-cyan-400 text-slate-950 ring-2 sm:ring-4 ring-cyan-500/20 font-black'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
+                          ? 'bg-cyan-400 text-slate-950 ring-2 sm:ring-4 ring-cyan-500/20 font-black'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}
                   >
                     {isCompleted ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : step.number}
                   </div>
 
                   <div className="truncate min-w-0">
-                    <div className={`text-[11px] sm:text-sm font-bold truncate ${
-                      isCurrent ? 'text-white' : isCompleted ? 'text-teal-300' : 'text-slate-400'
-                    }`}>
+                    <div className={`text-[11px] sm:text-sm font-bold truncate ${isCurrent ? 'text-white' : isCompleted ? 'text-teal-300' : 'text-slate-400'
+                      }`}>
                       {step.title}
                     </div>
                     <div className="text-[10px] text-slate-500 hidden sm:block">

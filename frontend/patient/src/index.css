@@ -11,12 +11,15 @@
     -webkit-user-select: none;
   }
 
-  input, textarea {
+  input,
+  textarea {
     user-select: text;
     -webkit-user-select: text;
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -24,7 +27,8 @@
     background-color: transparent !important;
   }
 
-  html, body {
+  html,
+  body {
     min-height: 100vh;
     overflow-x: hidden;
     overflow-y: auto;
@@ -87,10 +91,13 @@ html.light ::-webkit-scrollbar-thumb {
 
 /* Pulse Glow Keyframes */
 @keyframes pulse-subtle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.85;
     transform: scale(1.02);
@@ -100,4 +107,3 @@ html.light ::-webkit-scrollbar-thumb {
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
-

@@ -108,8 +108,8 @@ export const PatientDetailPage = ({
       red_flags: activeAlert
         ? [activeAlert.flag_description]
         : patient.has_red_flags
-        ? ['High Priority Red Flag']
-        : [],
+          ? ['High Priority Red Flag']
+          : [],
       vitals_summary: patient.vitals_summary || {
         bp: '120/80',
         pulse: '76 bpm',
@@ -207,7 +207,7 @@ export const PatientDetailPage = ({
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-200">
-      
+
       {/* ============================================================ */}
       {/* 🔹 1. TOP BAR: MINIMAL & FAST NAVIGATION (1-CLICK RETURN)    */}
       {/* ============================================================ */}
@@ -347,20 +347,17 @@ export const PatientDetailPage = ({
                 return (
                   <li
                     key={idx}
-                    className={`flex items-start gap-2.5 p-2 rounded-xl transition ${
-                      isEmergencyBullet
+                    className={`flex items-start gap-2.5 p-2 rounded-xl transition ${isEmergencyBullet
                         ? 'bg-rose-950/30 border border-rose-500/30 text-rose-100 font-semibold'
                         : 'hover:bg-slate-900/60'
-                    }`}
+                      }`}
                   >
-                    <span className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                      isEmergencyBullet ? 'bg-rose-500 animate-pulse' : 'bg-cyan-400'
-                    }`} />
+                    <span className={`w-2 h-2 rounded-full mt-2 shrink-0 ${isEmergencyBullet ? 'bg-rose-500 animate-pulse' : 'bg-cyan-400'
+                      }`} />
                     <span className="leading-relaxed">
                       {hasPrefix && (
-                        <strong className={`mr-1.5 font-bold ${
-                          isEmergencyBullet ? 'text-rose-300' : 'text-cyan-300'
-                        }`}>
+                        <strong className={`mr-1.5 font-bold ${isEmergencyBullet ? 'text-rose-300' : 'text-cyan-300'
+                          }`}>
                           {prefix}
                         </strong>
                       )}
@@ -417,7 +414,7 @@ export const PatientDetailPage = ({
         {/* EXPANDED CONTENT (ONLY VISIBLE ON EXPAND) */}
         {showFullIntake && (
           <div className="p-5 sm:p-6 border-t border-slate-800 bg-slate-950/60 space-y-6 animate-in fade-in duration-200">
-            
+
             {/* Sub-Tabs within Expanded Section for Clean Browsing */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               {[
@@ -435,11 +432,10 @@ export const PatientDetailPage = ({
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveFullIntakeTab(tab.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                      isSelected
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${isSelected
                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-black'
                         : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
@@ -454,7 +450,7 @@ export const PatientDetailPage = ({
                 <h3 className="text-sm font-black text-white uppercase tracking-wider text-cyan-400">
                   SOCRATES Multimodal Interview Responses
                 </h3>
-                
+
                 {/* Chief Complaint */}
                 <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">

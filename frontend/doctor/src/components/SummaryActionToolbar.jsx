@@ -122,11 +122,10 @@ export const SummaryActionToolbar = ({
                 key={reason}
                 type="button"
                 onClick={() => setRejectReason(reason)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition cursor-pointer ${
-                  rejectReason === reason
+                className={`text-xs px-3 py-1.5 rounded-full border transition cursor-pointer ${rejectReason === reason
                     ? 'bg-rose-600 text-white border-rose-600 font-bold'
                     : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-rose-400'
-                }`}
+                  }`}
               >
                 {reason}
               </button>

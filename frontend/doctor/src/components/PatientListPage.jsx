@@ -137,15 +137,14 @@ export const PatientListPage = ({
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
-                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  isSelected
+                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${isSelected
                     ? isRedFlagTab
                       ? 'bg-rose-600 text-white shadow-lg shadow-rose-950/50 animate-alert-pulse font-black'
                       : 'bg-cyan-500/25 text-cyan-200 border-2 border-cyan-400 shadow-lg shadow-cyan-950/40 font-black'
                     : isRedFlagTab
-                    ? 'bg-slate-900/80 text-rose-300 hover:bg-rose-950/40 border border-rose-900/60'
-                    : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:bg-slate-900'
-                }`}
+                      ? 'bg-slate-900/80 text-rose-300 hover:bg-rose-950/40 border border-rose-900/60'
+                      : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:bg-slate-900'
+                  }`}
               >
                 {tab === 'Red-Flags' ? (
                   <span className="flex items-center gap-1.5">
@@ -279,11 +278,10 @@ export const PatientListPage = ({
               <div
                 key={patient.patient_id}
                 onClick={() => onSelectPatient(patient.patient_id)}
-                className={`rounded-2xl p-4 sm:p-5 border transition-all cursor-pointer relative group ${
-                  isHighRedFlag
+                className={`rounded-2xl p-4 sm:p-5 border transition-all cursor-pointer relative group ${isHighRedFlag
                     ? 'border-rose-500/70 border-l-8 border-l-rose-500 bg-slate-900/95 hover:bg-slate-900 shadow-xl shadow-rose-950/30'
                     : 'border-slate-800 bg-slate-900/80 hover:border-cyan-500/50 hover:bg-slate-900 shadow-sm'
-                }`}
+                  }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Left Column: Demographics + 1-Line Complaint */}
@@ -291,11 +289,10 @@ export const PatientListPage = ({
                     {/* Top Row: Token, Name, Demographics, Urgency Badge, Wait Time */}
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-black ${
-                          isHighRedFlag
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-black ${isHighRedFlag
                             ? 'bg-rose-950 text-rose-300 border border-rose-500/50'
                             : 'bg-slate-950 text-cyan-400 border border-slate-800'
-                        }`}
+                          }`}
                       >
                         #{patient.token || patient.queue_number || `A-${100 + patient.patient_id}`}
                       </span>
@@ -346,11 +343,10 @@ export const PatientListPage = ({
                         e.stopPropagation();
                         onSelectPatient(patient.patient_id);
                       }}
-                      className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${
-                        isHighRedFlag
+                      className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${isHighRedFlag
                           ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/40'
                           : 'bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 text-slate-950 shadow-cyan-500/20'
-                      }`}
+                        }`}
                     >
                       <span>View Full Case</span>
                       <ChevronRight className="w-4 h-4 stroke-[2.5]" />

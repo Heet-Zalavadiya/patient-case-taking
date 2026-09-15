@@ -10,7 +10,8 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  html, body {
+  html,
+  body {
     margin: 0;
     padding: 0;
     background-color: #0b1329;
@@ -46,10 +47,13 @@
 
 /* Subtle pulse keyframe */
 @keyframes pulse-subtle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.85;
     transform: scale(1.02);
@@ -62,9 +66,12 @@
 
 /* High Priority / Emergency Red Flag Pulse */
 @keyframes alert-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
   }
@@ -199,11 +206,13 @@ html.light .text-slate-300 {
 }
 
 html.light .text-slate-400 {
-  color: #475569 !important; /* slate-600 high contrast */
+  color: #475569 !important;
+  /* slate-600 high contrast */
 }
 
 html.light .text-slate-500 {
-  color: #64748b !important; /* slate-500 */
+  color: #64748b !important;
+  /* slate-500 */
 }
 
 /* 3. Emergency Red-Flag & Triage Colors (High Contrast) */
@@ -219,8 +228,10 @@ html.light .bg-rose-500\/10,
 html.light .bg-rose-500\/15,
 html.light .bg-rose-500\/20,
 html.light .bg-rose-500\/25 {
-  background-color: #fff1f2 !important; /* rose-50 */
-  border-color: #fda4af !important; /* rose-300 */
+  background-color: #fff1f2 !important;
+  /* rose-50 */
+  border-color: #fda4af !important;
+  /* rose-300 */
 }
 
 html.light .text-rose-100,
@@ -231,7 +242,8 @@ html.light .text-rose-300\/80,
 html.light .text-rose-400,
 html.light .text-rose-400\/80,
 html.light .text-rose-500 {
-  color: #9f1239 !important; /* rose-800 */
+  color: #9f1239 !important;
+  /* rose-800 */
   font-weight: 700;
 }
 
@@ -266,8 +278,10 @@ html.light .bg-cyan-500\/10,
 html.light .bg-cyan-500\/15,
 html.light .bg-cyan-500\/20,
 html.light .bg-cyan-500\/25 {
-  background-color: #ecfeff !important; /* cyan-50 */
-  border-color: #a5f3fc !important; /* cyan-200 */
+  background-color: #ecfeff !important;
+  /* cyan-50 */
+  border-color: #a5f3fc !important;
+  /* cyan-200 */
 }
 
 html.light .text-cyan-200,
@@ -279,7 +293,8 @@ html.light .text-cyan-400\/80,
 html.light .text-sky-200,
 html.light .text-sky-300,
 html.light .text-sky-400 {
-  color: #0e7490 !important; /* cyan-700 */
+  color: #0e7490 !important;
+  /* cyan-700 */
   font-weight: 700;
 }
 
@@ -302,16 +317,20 @@ html.light .bg-amber-500\/15,
 html.light .bg-amber-500\/20,
 html.light .bg-amber-500\/25,
 html.light .bg-amber-500\/30 {
-  background-color: #fffbeb !important; /* amber-50 */
-  border-color: #fde68a !important; /* amber-200 */
+  background-color: #fffbeb !important;
+  /* amber-50 */
+  border-color: #fde68a !important;
+  /* amber-200 */
 }
 
 html.light .bg-orange-500\/10,
 html.light .bg-orange-500\/15,
 html.light .bg-orange-500\/20,
 html.light .bg-orange-500\/25 {
-  background-color: #fff7ed !important; /* orange-50 */
-  border-color: #fed7aa !important; /* orange-200 */
+  background-color: #fff7ed !important;
+  /* orange-50 */
+  border-color: #fed7aa !important;
+  /* orange-200 */
 }
 
 html.light .text-amber-200,
@@ -319,7 +338,8 @@ html.light .text-amber-300,
 html.light .text-amber-400,
 html.light .text-amber-400\/80,
 html.light .text-amber-500 {
-  color: #92400e !important; /* amber-800 */
+  color: #92400e !important;
+  /* amber-800 */
   font-weight: 700;
 }
 
@@ -327,7 +347,8 @@ html.light .text-orange-200,
 html.light .text-orange-300,
 html.light .text-orange-400,
 html.light .text-orange-500 {
-  color: #9a3412 !important; /* orange-800 */
+  color: #9a3412 !important;
+  /* orange-800 */
   font-weight: 700;
 }
 
@@ -366,8 +387,10 @@ html.light .bg-emerald-500\/10,
 html.light .bg-emerald-500\/15,
 html.light .bg-emerald-500\/20,
 html.light .bg-teal-500\/15 {
-  background-color: #ecfdf5 !important; /* emerald-50 */
-  border-color: #a7f3d0 !important; /* emerald-200 */
+  background-color: #ecfdf5 !important;
+  /* emerald-50 */
+  border-color: #a7f3d0 !important;
+  /* emerald-200 */
 }
 
 html.light .text-emerald-200,
@@ -376,7 +399,8 @@ html.light .text-emerald-400,
 html.light .text-teal-200,
 html.light .text-teal-300,
 html.light .text-teal-400 {
-  color: #047857 !important; /* emerald-700 */
+  color: #047857 !important;
+  /* emerald-700 */
   font-weight: 700;
 }
 

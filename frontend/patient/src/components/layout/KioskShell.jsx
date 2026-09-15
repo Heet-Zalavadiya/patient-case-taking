@@ -10,20 +10,20 @@ import { CaseSummaryToken } from '../steps/CaseSummaryToken';
 import { ChatbotWidget } from '../common/ChatbotWidget';
 import { speakPhrase } from '../../utils/speechUtils';
 import { subscribeBackendStatus, apiCheckHealth } from '../../services/api';
-import { 
-  Activity, 
-  Clock, 
-  Languages, 
-  Eye, 
-  Headphones, 
-  SlidersHorizontal, 
-  ShieldCheck, 
-  Check, 
-  ChevronRight, 
-  RotateCcw, 
-  Sparkles, 
-  HeartPulse, 
-  Info, 
+import {
+  Activity,
+  Clock,
+  Languages,
+  Eye,
+  Headphones,
+  SlidersHorizontal,
+  ShieldCheck,
+  Check,
+  ChevronRight,
+  RotateCcw,
+  Sparkles,
+  HeartPulse,
+  Info,
   PhoneCall,
   Sun,
   Moon,
@@ -31,14 +31,14 @@ import {
 } from 'lucide-react';
 
 export const KioskShell = () => {
-  const { 
-    patientData, 
+  const {
+    patientData,
     theme,
     toggleTheme,
-    setLanguage, 
-    setAccessibilityMode, 
-    goToStep, 
-    resetSession 
+    setLanguage,
+    setAccessibilityMode,
+    goToStep,
+    resetSession
   } = usePatient();
 
   const isLight = theme === 'light';
@@ -193,23 +193,21 @@ export const KioskShell = () => {
       />
 
       {/* LAYER 2: DYNAMIC GLASS OVERLAY (MUST BE SEMI-TRANSPARENT, NEVER SOLID) */}
-      <div 
-        className={`fixed inset-0 pointer-events-none -z-20 transition-all duration-300 ${
-          theme === 'dark' 
-            ? 'bg-slate-950/70 backdrop-blur-[2px]' 
+      <div
+        className={`fixed inset-0 pointer-events-none -z-20 transition-all duration-300 ${theme === 'dark'
+            ? 'bg-slate-950/70 backdrop-blur-[2px]'
             : 'bg-slate-900/10 bg-gradient-to-b from-white/35 via-transparent to-white/40 backdrop-blur-[1px]'
-        }`} 
+          }`}
       />
 
       {/* FLOATING DARK / LIGHT MODE TOGGLE BUTTON */}
       <button
         type="button"
         onClick={toggleTheme}
-        className={`fixed top-4 right-4 z-50 p-2.5 sm:px-3.5 sm:py-2 rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xl flex items-center gap-2 ${
-          isLight
+        className={`fixed top-4 right-4 z-50 p-2.5 sm:px-3.5 sm:py-2 rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 transform active:scale-95 cursor-pointer shadow-xl flex items-center gap-2 ${isLight
             ? 'bg-white/90 hover:bg-slate-100 border-slate-300 text-amber-600 shadow-slate-400/20'
             : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700 text-cyan-400 shadow-slate-950/60'
-        }`}
+          }`}
         title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
       >
         {isLight ? (
