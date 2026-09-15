@@ -141,13 +141,8 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     .card-patient .icon-wrapper { background: rgba(6, 182, 212, 0.15); color: #38bdf8; }
-<<<<<<< HEAD
     .card-doctor .icon-wrapper { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
     .card-backend .icon-wrapper { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-=======
-    .card-doctor .icon-wrapper { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .card-backend .icon-wrapper { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
->>>>>>> b444885b2c37225ef85ad4c554f091e5fc59ccd3
 
     .card h3 {
       font-family: 'Outfit', sans-serif;

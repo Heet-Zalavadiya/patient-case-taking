@@ -1,5 +1,4 @@
 """
-<<<<<<< HEAD
 ocr_bridge.py  –  Multimodal medical document OCR and clinical extraction bridge.
 
 Uses Google Gemini Vision (via REST transport) to accurately extract
@@ -95,73 +94,11 @@ CRITICAL RULES:
 2. DO NOT hallucinate or return placeholder medications (such as Paracetamol 500mg, Atorvastatin, or Ashwagandha) unless they are genuinely written in the image.
 3. Return ONLY valid JSON wrapped in ```json ... ``` or as plain JSON.
 """
-=======
-ocr_bridge.py  –  In-process bridge between the backend and the OCR pipeline.
-
-Architecture decision: single-server model.
-  - No HTTP round-trip to a separate OCR service.
-  - The ocr/ package is imported directly into the same Python process.
-  - sys.path is patched at import time so the relative imports inside
-    ocr/services/ resolve correctly regardless of the working directory.
-"""
-
-import os
-import sys
-import logging
-from typing import Optional
-
-logger = logging.getLogger("uvicorn")
-
-# ── Path bootstrap ─────────────────────────────────────────────────────────────
-# Layout:
-#   <project_root>/
-#       backend/        ← uvicorn is launched from here
-#       ocr/
-#           services/
-#               document_router.py   ← target
-#               hybrid_ocr.py
-
-_THIS_DIR = os.path.dirname(os.path.abspath(__file__))            # backend/services/
-_BACKEND_DIR = os.path.dirname(_THIS_DIR)                          # backend/
-_PROJECT_ROOT = os.path.dirname(_BACKEND_DIR)                      # project root
-_OCR_DIR = os.path.join(_PROJECT_ROOT, "ocr")                     # ocr/
-
-# Only add project root (not ocr/ itself) so we import as ocr.services.*
-# This avoids shadowing the backend's own services/ package.
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
-
-# ── Lazy import of OCR services ────────────────────────────────────────────────
-_ocr_available = False
-_extract_medical_document = None
-
-try:
-    from ocr.services.document_router import extract_medical_document as _extract_fn
-    _extract_medical_document = _extract_fn
-    _ocr_available = True
-    logger.info("[OCR Bridge] OCR pipeline loaded successfully (in-process mode).")
-except ImportError as e:
-    logger.warning(
-        f"[OCR Bridge] OCR pipeline not available: {e}. "
-        "Documents will be saved with status='pending' and processed when OCR is installed."
-    )
-
-
-# ── Public API ─────────────────────────────────────────────────────────────────
-
-def is_ocr_available() -> bool:
-    """Return True if the OCR pipeline imported successfully."""
-    return _ocr_available
->>>>>>> b444885b2c37225ef85ad4c554f091e5fc59ccd3
 
 
 def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict:
     """
-<<<<<<< HEAD
     Process a medical document image using Gemini Vision multimodal extraction.
-=======
-    Process a medical document image through the OCR pipeline.
->>>>>>> b444885b2c37225ef85ad4c554f091e5fc59ccd3
 
     Returns a normalized dict:
     {
@@ -169,7 +106,6 @@ def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict
         "document_date": Optional[str],
         "raw_ocr_text": str,
         "status": "processed" | "failed",
-<<<<<<< HEAD
         "medications": [...],
         "lab_values": [...],
         "conditions": [...],
@@ -216,11 +152,7 @@ def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict
         try:
             logger.info(f"[OCR Bridge] Attempting extraction with {model_name}...")
             model = genai.GenerativeModel(model_name)
-            response = model.generate_content([OCR_SYSTEM_PROMPT, image])
             if response and response.text:
-                raw_response_text = response.text.strip()
-                logger.info(f"[OCR Bridge] Received response from {model_name} (length={len(raw_response_text)})")
-                break
         except Exception as e:
             last_exception = e
             logger.warning(f"[OCR Bridge] Model {model_name} failed: {e}")
@@ -232,7 +164,6 @@ def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict
 
     # Parse JSON from response
     parsed_json = None
-    try:
         # Check if wrapped in code fence
         json_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw_response_text)
         json_str = json_match.group(1).strip() if json_match else raw_response_text.strip()
@@ -261,48 +192,10 @@ def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict
             "document_type": parsed_json.get("document_type") or "unknown",
             "document_date": None,
             "raw_ocr_text": parsed_json.get("summary") or "Could not extract clear information from this document. Please verify manually.",
-=======
-        "medications": [
-            {"medicine_name", "dosage", "frequency", "duration", "prescribed_date"}
-        ],
-        "lab_values": [
-            {"test_name", "result_value", "unit", "reference_range", "is_abnormal"}
-        ],
-        "conditions": [
-            {"entity_type", "description", "entity_date"}
-        ],
-    }
-
-    If the OCR pipeline is unavailable, returns a graceful fallback dict with
-    status="pending" so the document record is still created in the DB.
-    """
-    if not _ocr_available or _extract_medical_document is None:
-        return {
-            "document_type": "unknown",
-            "document_date": None,
-            "raw_ocr_text": "",
-            "status": "pending",
-            "medications": [],
-            "lab_values": [],
-            "conditions": [],
-            "error": "OCR pipeline not installed. Install ocr/requirements.txt to enable.",
-        }
-
-    try:
-        result = _extract_medical_document(image_bytes, patient_metadata)
-        return result
-    except Exception as e:
-        logger.exception(f"[OCR Bridge] Processing failed: {e}")
-        return {
-            "document_type": "unknown",
-            "document_date": None,
-            "raw_ocr_text": "",
->>>>>>> b444885b2c37225ef85ad4c554f091e5fc59ccd3
             "status": "failed",
             "medications": [],
             "lab_values": [],
             "conditions": [],
-<<<<<<< HEAD
         }
 
     summary_text = parsed_json.get("summary") or "Document verified and clinical findings extracted."
@@ -323,7 +216,3 @@ def run_ocr(image_bytes: bytes, patient_metadata: Optional[dict] = None) -> dict
         "lab_values": labs,
         "conditions": conditions,
     }
-=======
-            "error": str(e),
-        }
->>>>>>> b444885b2c37225ef85ad4c554f091e5fc59ccd3
